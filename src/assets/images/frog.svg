@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="120" height="120">
+  <!-- Corpo/Bolha do Sapo -->
+  <rect x="10" y="25" width="80" height="55" rx="25" fill="#2ECC71" />
+  <!-- Olho Esquerdo -->
+  <circle cx="35" cy="25" r="12" fill="#2ECC71" />
+  <circle cx="35" cy="25" r="8" fill="#FFFFFF" />
+  <circle cx="37" cy="25" r="4" fill="#1E272C" />
+  <circle cx="39" cy="23" r="1.5" fill="#FFFFFF" />
+  <!-- Olho Direito -->
+  <circle cx="65" cy="25" r="12" fill="#2ECC71" />
+  <circle cx="65" cy="25" r="8" fill="#FFFFFF" />
+  <circle cx="63" cy="25" r="4" fill="#1E272C" />
+  <circle cx="61" cy="23" r="1.5" fill="#FFFFFF" />
+  <!-- Boca/Sorriso -->
+  <path d="M 40 60 Q 50 70 60 60" stroke="#1E272C" stroke-width="4" stroke-linecap="round" fill="none" />
+  <!-- Bochechas -->
+  <circle cx="28" cy="58" r="4" fill="#E74C3C" opacity="0.6" />
+  <circle cx="72" cy="58" r="4" fill="#E74C3C" opacity="0.6" />
+</svg>

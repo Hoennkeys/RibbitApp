@@ -179,10 +179,29 @@ const styles = StyleSheet.create({
   errorText: { color: theme.colors.textPrimary, fontSize: 16, marginBottom: 20 },
   backButton: { marginBottom: 24 },
   backButtonText: { color: theme.colors.accent, fontSize: 17, fontWeight: '500' },
-  header: { marginBottom: 32 },
-  nomePopular: { fontSize: 34, fontWeight: '800', color: theme.colors.textPrimary, letterSpacing: -1 },
-  nomeCientifico: { fontSize: 18, fontStyle: 'italic', color: theme.colors.textSecondary, marginTop: 4 },
-  tagsRow: { flexDirection: 'row', marginTop: 16 },
+  header: {
+    marginBottom: 32,
+    alignItems: 'center', // Centralized header
+  },
+  nomePopular: {
+    fontSize: 34,
+    fontWeight: '800',
+    color: theme.colors.textPrimary,
+    letterSpacing: -1,
+    textAlign: 'center', // Centralized text
+  },
+  nomeCientifico: {
+    fontSize: 18,
+    fontStyle: 'italic',
+    color: theme.colors.textSecondary,
+    marginTop: 4,
+    textAlign: 'center', // Centralized text
+  },
+  tagsRow: {
+    flexDirection: 'row',
+    marginTop: 16,
+    justifyContent: 'center', // Center tags too
+  },
   tag: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, marginRight: 10 },
   tagRegion: { backgroundColor: 'rgba(52, 199, 89, 0.1)' },
   tagHabitat: { backgroundColor: 'rgba(0, 113, 227, 0.1)' },

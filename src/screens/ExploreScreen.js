@@ -162,21 +162,23 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 24,
-    paddingTop: 32,
-    paddingBottom: 16,
-    alignItems: 'flex-start',
+    paddingTop: 60, // Increased top padding for vertical balance
+    paddingBottom: 24,
+    alignItems: 'center', // Centralized header
   },
   title: {
     fontSize: 34,
     fontWeight: '800',
     color: theme.colors.textPrimary,
     letterSpacing: -0.5,
+    textAlign: 'center', // Centralized text
   },
   subtitle: {
     fontSize: 16,
     color: theme.colors.textSecondary,
-    marginTop: 4,
+    marginTop: 8,
     fontWeight: '400',
+    textAlign: 'center', // Centralized text
   },
   searchBarContainer: {
     paddingHorizontal: 24,

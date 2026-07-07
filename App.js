@@ -14,6 +14,8 @@ import SoundIdScreen from './src/screens/SoundIdScreen';
 import ExploreScreen from './src/screens/ExploreScreen';
 import WizardScreen from './src/screens/WizardScreen';
 import LifeListScreen from './src/screens/LifeListScreen';
+import DashboardScreen from './src/screens/DashboardScreen';
+import ChatScreen from './src/screens/ChatScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import SignUpScreen from './src/screens/SignUpScreen';
 import FloatingActionButton from './src/components/FloatingActionButton';
@@ -83,18 +85,20 @@ export default function App() {
                 paddingTop: 10,
                 position: 'absolute',
                 bottom: 20,
-                left: 20,
-                right: 20,
+                left: 10,
+                right: 10,
                 borderRadius: 30,
                 ...theme.shadows.medium,
               },
               tabBarLabelStyle: {
-                fontSize: 12,
+                fontSize: 10,
                 fontWeight: '500',
               },
               tabBarIcon: ({ color, size }) => {
                 let icon;
-                if (route.name === 'SoundID') icon = '🎙️';
+                if (route.name === 'Dashboard') icon = '📊';
+                else if (route.name === 'SoundID') icon = '🎙️';
+                else if (route.name === 'Chat') icon = '💬';
                 else if (route.name === 'Explorar') icon = '🔍';
                 else if (route.name === 'Assistente') icon = '🧙';
                 else if (route.name === 'Perfil') icon = '🐸';
@@ -105,10 +109,24 @@ export default function App() {
             })}
           >
             <Tab.Screen
+              name="Dashboard"
+              component={DashboardScreen}
+              options={{
+                tabBarLabel: 'Painel',
+              }}
+            />
+            <Tab.Screen
               name="SoundID"
               component={SoundIdScreen}
               options={{
                 tabBarLabel: 'Sound ID',
+              }}
+            />
+            <Tab.Screen
+              name="Chat"
+              component={ChatScreen}
+              options={{
+                tabBarLabel: 'Chat',
               }}
             />
             <Tab.Screen
@@ -154,4 +172,3 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
 });
-

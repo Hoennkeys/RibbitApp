@@ -178,24 +178,26 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 24,
-    paddingTop: 32,
+    paddingTop: 60, // Increased top padding for vertical balance
     paddingBottom: 180,
   },
   header: {
-    alignItems: 'flex-start',
-    marginBottom: 32,
+    alignItems: 'center', // Centralized header
+    marginBottom: 40,
   },
   title: {
     fontSize: 34,
     fontWeight: '800',
     color: theme.colors.textPrimary,
     letterSpacing: -0.5,
+    textAlign: 'center', // Centralized text
   },
   subtitle: {
     fontSize: 16,
     color: theme.colors.textSecondary,
-    marginTop: 4,
+    marginTop: 8,
     fontWeight: '400',
+    textAlign: 'center', // Centralized text
   },
   card: {
     backgroundColor: theme.colors.surface,

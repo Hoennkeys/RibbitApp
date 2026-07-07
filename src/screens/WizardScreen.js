@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// RibbitApp — Wizard Screen (Assistente de Identificação)
+// Ribbit — Wizard Screen (Apple Design System)
 // Location: C:\Ribbit\RibbitApp\src\screens\WizardScreen.js
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -11,8 +11,9 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
-import { mockDataService } from '../services/mockDataService';
+import { dataService } from '../services/dataService';
 import SpeciesDetailsScreen from './SpeciesDetailsScreen';
+import { theme } from '../utils/theme';
 
 const QUESTIONS = [
   {
@@ -52,33 +53,33 @@ export default function WizardScreen() {
   const [results, setResults] = useState([]);
   const [selectedSpeciesId, setSelectedSpeciesId] = useState(null);
 
-  const handleSelectOption = (value) => {
+  const handleSelectOption = async (value) => {
     const key = QUESTIONS[currentStep].key;
-    setAnswers(prev => ({ ...prev, [key]: value }));
+    const newAnswers = { ...answers, [key]: value };
+    setAnswers(newAnswers);
     
     if (currentStep < QUESTIONS.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
-      // Processa resultado
-      showSuggestions();
+      showSuggestions(newAnswers);
     }
   };
 
-  const showSuggestions = () => {
-    const allSpecies = mockDataService.getSpecies();
-    
-    // Filtro flexível baseado nas respostas
-    const matches = allSpecies.filter(spec => {
-      // Região
-      const matchReg = !answers.regiao || spec.regiao.toLowerCase().includes(answers.regiao.toLowerCase()) || spec.nome_popular === 'Sapo-cururu';
-      // Habitat
-      const matchHab = !answers.habitat || spec.habitat.toLowerCase().includes(answers.habitat.toLowerCase()) || spec.nome_popular === 'Sapo-cururu';
+  const showSuggestions = async (finalAnswers) => {
+    try {
+      const allSpecies = await dataService.getSpecies();
       
-      return matchReg || matchHab;
-    });
+      const matches = allSpecies.filter(spec => {
+        const matchReg = !finalAnswers.regiao || spec.regiao.toLowerCase().includes(finalAnswers.regiao.toLowerCase()) || spec.nome_popular === 'Sapo-cururu';
+        const matchHab = !finalAnswers.habitat || spec.habitat.toLowerCase().includes(finalAnswers.habitat.toLowerCase()) || spec.nome_popular === 'Sapo-cururu';
+        return matchReg || matchHab;
+      });
 
-    setResults(matches);
-    setCurrentStep(QUESTIONS.length); // Ir para tela de resultados
+      setResults(matches);
+      setCurrentStep(QUESTIONS.length);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleReset = () => {
@@ -105,17 +106,19 @@ export default function WizardScreen() {
 
       {currentStep < QUESTIONS.length ? (
         <View style={styles.card}>
-          <Text style={styles.questionTitle}>{QUESTIONS[currentStep].title}</Text>
           <Text style={styles.progressText}>Passo {currentStep + 1} de {QUESTIONS.length}</Text>
-          
+          <Text style={styles.questionTitle}>{QUESTIONS[currentStep].title}</Text>
+
           <View style={styles.optionsContainer}>
             {QUESTIONS[currentStep].options.map((opt) => (
               <TouchableOpacity
                 key={opt.value}
                 style={styles.optionButton}
                 onPress={() => handleSelectOption(opt.value)}
+                activeOpacity={0.6}
               >
                 <Text style={styles.optionText}>{opt.label}</Text>
+                <Text style={styles.optionChevron}>›</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -143,13 +146,15 @@ export default function WizardScreen() {
                 key={spec.id}
                 style={styles.resultCard}
                 onPress={() => setSelectedSpeciesId(spec.id)}
-                activeOpacity={0.8}
+                activeOpacity={0.7}
               >
                 <View style={styles.resultHeader}>
-                  <Text style={styles.resultPopular}>{spec.nome_popular}</Text>
-                  <Text style={styles.resultArrow}>→</Text>
+                  <View>
+                    <Text style={styles.resultPopular}>{spec.nome_popular}</Text>
+                    <Text style={styles.resultScientific}>{spec.nome_cientifico}</Text>
+                  </View>
+                  <Text style={styles.resultArrow}>›</Text>
                 </View>
-                <Text style={styles.resultScientific}>{spec.nome_cientifico}</Text>
                 <Text style={styles.resultDescription} numberOfLines={2}>
                   {spec.descricao}
                 </Text>
@@ -169,137 +174,146 @@ export default function WizardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121B22',
+    backgroundColor: theme.colors.background,
   },
   content: {
     padding: 24,
-    paddingBottom: 40,
+    paddingTop: 32,
+    paddingBottom: 180,
   },
   header: {
-    alignItems: 'center',
-    marginBottom: 30,
+    alignItems: 'flex-start',
+    marginBottom: 32,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#E9EDEF',
+    fontSize: 34,
+    fontWeight: '800',
+    color: theme.colors.textPrimary,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 14,
-    color: '#8596A0',
-    marginTop: 6,
-    textAlign: 'center',
+    fontSize: 16,
+    color: theme.colors.textSecondary,
+    marginTop: 4,
+    fontWeight: '400',
   },
   card: {
-    backgroundColor: '#1F2C34',
-    borderRadius: 16,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.lg,
     padding: 24,
-    borderWidth: 1,
-    borderColor: '#2A3942',
+    ...theme.shadows.soft,
   },
   questionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#E9EDEF',
-    marginBottom: 8,
+    fontSize: 22,
+    fontWeight: '700',
+    color: theme.colors.textPrimary,
+    marginBottom: 24,
+    letterSpacing: -0.3,
   },
   progressText: {
     fontSize: 13,
-    color: '#8596A0',
-    marginBottom: 24,
+    fontWeight: '600',
+    color: theme.colors.primary,
+    textTransform: 'uppercase',
+    marginBottom: 8,
+    letterSpacing: 1,
   },
   optionsContainer: {
     width: '100%',
   },
   optionButton: {
-    backgroundColor: '#2A3942',
-    paddingVertical: 14,
+    backgroundColor: theme.colors.background,
+    paddingVertical: 16,
     paddingHorizontal: 16,
-    borderRadius: 12,
+    borderRadius: 14,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#3D5361',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   optionText: {
-    color: '#E9EDEF',
-    fontSize: 14,
-    fontWeight: '600',
+    color: theme.colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '500',
+    flex: 1,
+  },
+  optionChevron: {
+    color: theme.colors.border,
+    fontSize: 20,
+    marginLeft: 8,
   },
   backStepButton: {
     alignSelf: 'center',
     marginTop: 16,
   },
   backStepText: {
-    color: '#8596A0',
-    fontSize: 13,
-    textDecorationLine: 'underline',
+    color: theme.colors.accent,
+    fontSize: 14,
+    fontWeight: '500',
   },
   resultsContainer: {
     width: '100%',
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#E9EDEF',
+    fontSize: 22,
+    fontWeight: '700',
+    color: theme.colors.textPrimary,
     marginBottom: 16,
+    letterSpacing: -0.3,
   },
   resultCard: {
-    backgroundColor: '#1F2C34',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#2A3942',
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.lg,
+    padding: 20,
+    marginBottom: 16,
+    ...theme.shadows.soft,
   },
   resultHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   resultPopular: {
-    color: '#E9EDEF',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: theme.colors.textPrimary,
+    fontSize: 18,
+    fontWeight: '700',
   },
   resultArrow: {
-    color: '#2ECC71',
-    fontSize: 18,
+    color: theme.colors.border,
+    fontSize: 24,
+    fontWeight: '300',
   },
   resultScientific: {
-    color: '#8596A0',
-    fontSize: 12,
+    color: theme.colors.textSecondary,
+    fontSize: 13,
     fontStyle: 'italic',
     marginTop: 2,
   },
   resultDescription: {
-    color: '#8596A0',
-    fontSize: 13,
-    marginTop: 10,
-    lineHeight: 18,
+    color: theme.colors.textSecondary,
+    fontSize: 15,
+    marginTop: 12,
+    lineHeight: 20,
   },
   emptyContainer: {
     alignItems: 'center',
-    marginVertical: 30,
+    marginVertical: 40,
   },
   emptyText: {
-    color: '#8596A0',
-    fontSize: 14,
+    color: theme.colors.textSecondary,
+    fontSize: 16,
   },
   resetButton: {
-    backgroundColor: '#2ECC71',
-    paddingVertical: 14,
-    borderRadius: 24,
+    backgroundColor: theme.colors.primary,
+    paddingVertical: 16,
+    borderRadius: 14,
     alignItems: 'center',
     marginTop: 20,
-    shadowColor: '#2ECC71',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 6,
+    ...theme.shadows.medium,
   },
   resetButtonText: {
-    color: '#121B22',
-    fontWeight: 'bold',
-    fontSize: 15,
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 17,
   },
 });

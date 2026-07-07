@@ -1,9 +1,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// RibbitApp — Explore Screen
+// Ribbit — Explore Screen
 // Location: C:\Ribbit\RibbitApp\src\screens\ExploreScreen.js
 // ─────────────────────────────────────────────────────────────────────────────
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,8 +12,9 @@ import {
   TouchableOpacity,
   FlatList,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
-import { mockDataService } from '../services/mockDataService';
+import { dataService } from '../services/dataService';
 import SpeciesDetailsScreen from './SpeciesDetailsScreen';
 
 const REGIONS = ['Todos', 'Mata Atlântica', 'Cerrado e Caatinga', 'Sudeste e Centro-Oeste'];
@@ -22,8 +23,23 @@ export default function ExploreScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('Todos');
   const [selectedSpeciesId, setSelectedSpeciesId] = useState(null);
+  const [speciesList, setSpeciesList] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const speciesList = mockDataService.getSpecies();
+  useEffect(() => {
+    fetchSpecies();
+  }, []);
+
+  const fetchSpecies = async () => {
+    try {
+      const data = await dataService.getSpecies();
+      setSpeciesList(data);
+    } catch (error) {
+      console.error('Erro ao buscar espécies:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredSpecies = speciesList.filter((item) => {
     const matchesSearch =
@@ -86,41 +102,45 @@ export default function ExploreScreen() {
         </ScrollView>
       </View>
 
-      <FlatList
-        data={filteredSpecies}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Nenhum anfíbio correspondente encontrado.</Text>
-          </View>
-        }
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.speciesCard}
-            onPress={() => setSelectedSpeciesId(item.id)}
-            activeOpacity={0.8}
-          >
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>{item.nome_popular}</Text>
-              <Text style={styles.cardArrow}>→</Text>
+      {loading ? (
+        <ActivityIndicator size="large" color="#2ECC71" style={{ marginTop: 40 }} />
+      ) : (
+        <FlatList
+          data={filteredSpecies}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>Nenhum anfíbio correspondente encontrado.</Text>
             </View>
-            <Text style={styles.cardScientific}>{item.nome_cientifico}</Text>
-            <Text style={styles.cardDescription} numberOfLines={2}>
-              {item.descricao}
-            </Text>
-            
-            <View style={styles.tagsContainer}>
-              <View style={styles.tag}>
-                <Text style={styles.tagText}>{item.regiao}</Text>
+          }
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.speciesCard}
+              onPress={() => setSelectedSpeciesId(item.id)}
+              activeOpacity={0.8}
+            >
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>{item.nome_popular}</Text>
+                <Text style={styles.cardArrow}>→</Text>
               </View>
-              <View style={[styles.tag, styles.tagHabitat]}>
-                <Text style={styles.tagText}>{item.habitat}</Text>
+              <Text style={styles.cardScientific}>{item.nome_cientifico}</Text>
+              <Text style={styles.cardDescription} numberOfLines={2}>
+                {item.descricao}
+              </Text>
+
+              <View style={styles.tagsContainer}>
+                <View style={styles.tag}>
+                  <Text style={styles.tagText}>{item.regiao}</Text>
+                </View>
+                <View style={[styles.tag, styles.tagHabitat]}>
+                  <Text style={styles.tagText}>{item.habitat}</Text>
+                </View>
               </View>
-            </View>
-          </TouchableOpacity>
-        )}
-      />
+            </TouchableOpacity>
+          )}
+        />
+      )}
     </View>
   );
 }
@@ -189,7 +209,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 24,
-    paddingBottom: 30,
+    paddingBottom: 100,
   },
   emptyContainer: {
     alignItems: 'center',

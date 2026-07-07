@@ -14,7 +14,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Spectrogram from '../components/Spectrogram';
-import { mockDataService } from '../services/mockDataService';
+import { dataService } from '../services/dataService';
+import supabase from '../services/supabaseClient';
 import SpeciesDetailsScreen from './SpeciesDetailsScreen';
 
 export default function SoundIdScreen() {
@@ -23,14 +24,18 @@ export default function SoundIdScreen() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [selectedSpeciesId, setSelectedSpeciesId] = useState(null);
+  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setUserId(user.id);
+    });
+
     let interval;
     if (isRecording) {
       interval = setInterval(() => {
         setTimer(prev => {
           if (prev >= 6) {
-            // Auto stop after 6 seconds
             handleStopRecording();
             return 0;
           }
@@ -52,28 +57,42 @@ export default function SoundIdScreen() {
     setIsRecording(false);
     setIsAnalyzing(true);
     
-    // Simula análise de espectrograma por inteligência artificial (2 segundos)
-    setTimeout(() => {
-      setIsAnalyzing(false);
-      // Sugere espécies baseado no som gravado
-      const allSpecies = mockDataService.getSpecies();
-      setSuggestions([
-        { ...allSpecies[1], matchChance: 96 }, // Perereca-verde
-        { ...allSpecies[0], matchChance: 74 }, // Sapo-cururu
-        { ...allSpecies[2], matchChance: 35 }  // Rã-pimenta
-      ]);
+    // Análise simulada com dados reais do banco
+    setTimeout(async () => {
+      try {
+        const allSpecies = await dataService.getSpecies();
+        setIsAnalyzing(false);
+
+        // Simula matching (em um app real isso seria via API de IA)
+        if (allSpecies.length > 0) {
+          setSuggestions([
+            { ...allSpecies[0], matchChance: 96 },
+            { ...allSpecies[1], matchChance: 74 },
+          ].filter(s => s.id));
+        }
+      } catch (error) {
+        setIsAnalyzing(false);
+        Alert.alert('Erro', 'Não foi possível analisar o áudio.');
+      }
     }, 2000);
   };
 
-  const handleSaveObservation = (species) => {
-    mockDataService.addSon(species.id, 'Lagoa de Parelheiros, SP');
-    Alert.alert(
-      '🐸 Sucesso!',
-      `Sua observação de "${species.nome_popular}" foi enviada para revisão da comunidade científica e você ganhou 50 XP!`,
-      [{ text: 'Ver na Minha Lista' }]
-    );
-    // Limpa sugestões
-    setSuggestions([]);
+  const handleSaveObservation = async (species) => {
+    if (!userId) {
+      Alert.alert('Aviso', 'Você precisa estar logado para salvar observações.');
+      return;
+    }
+
+    try {
+      await dataService.addObservation(species.id, 'Localização GPS', userId);
+      Alert.alert(
+        '🐸 Sucesso!',
+        `Sua observação de "${species.nome_popular}" foi enviada para o banco de dados. Você ganhou 50 XP!`,
+      );
+      setSuggestions([]);
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível salvar a observação.');
+    }
   };
 
   if (selectedSpeciesId) {
@@ -168,7 +187,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 24,
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   header: {
     alignItems: 'center',

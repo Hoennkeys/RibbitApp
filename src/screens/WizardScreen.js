@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// RibbitApp — Wizard Screen (Assistente de Identificação)
+// Ribbit — Wizard Screen (Assistente de Identificação)
 // Location: C:\Ribbit\RibbitApp\src\screens\WizardScreen.js
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 24,
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   header: {
     alignItems: 'center',

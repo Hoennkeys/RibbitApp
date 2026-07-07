@@ -11,43 +11,70 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
-  FlatList,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import Spectrogram from '../components/Spectrogram';
-import { mockDataService } from '../services/mockDataService';
+import { dataService } from '../services/dataService';
+import { supabase } from '../services/supabaseClient';
 
 export default function SpeciesDetailsScreen({ speciesId, onBack }) {
-  const species = mockDataService.getSpeciesById(speciesId);
+  const [species, setSpecies] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const [comments, setComments] = useState([]);
   const [newCommentText, setNewCommentText] = useState('');
-  
-  // Encontra o primeiro som gravado dessa espécie para vincular comentários
-  const associatedSons = mockDataService.getSonsBySpecies(speciesId);
-  const associatedSomId = associatedSons[0]?.id || `mock-som-${speciesId}`;
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    loadComments();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+    fetchSpeciesData();
     return () => setIsPlaying(false);
   }, [speciesId]);
 
-  const loadComments = () => {
-    const list = mockDataService.getComentarios(associatedSomId);
-    setComments([...list]);
+  const fetchSpeciesData = async () => {
+    setLoading(true);
+    try {
+      const sData = await dataService.getSpeciesById(speciesId);
+      setSpecies(sData);
+
+      const cData = await dataService.getComments(speciesId);
+      setComments(cData);
+    } catch (error) {
+      console.error('Erro ao carregar detalhes:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePlayToggle = () => {
     setIsPlaying(!isPlaying);
   };
 
-  const handleAddComment = () => {
-    if (!newCommentText.trim()) return;
-    mockDataService.addComentario(associatedSomId, newCommentText);
-    setNewCommentText('');
-    loadComments();
+  const handleAddComment = async () => {
+    if (!newCommentText.trim() || !user) return;
+
+    try {
+      const userName = user.user_metadata?.full_name || user.email.split('@')[0];
+      await dataService.addComment(speciesId, user.id, userName, newCommentText);
+      setNewCommentText('');
+      const cData = await dataService.getComments(speciesId);
+      setComments(cData);
+    } catch (error) {
+      console.error('Erro ao adicionar comentário:', error);
+    }
   };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color="#2ECC71" />
+      </View>
+    );
+  }
 
   if (!species) {
     return (
@@ -133,7 +160,7 @@ export default function SpeciesDetailsScreen({ speciesId, onBack }) {
                 <View style={styles.commentHeader}>
                   <Text style={styles.commentAuthor}>{item.usuario_nome}</Text>
                   <Text style={styles.commentTime}>
-                    {new Date(item.criado_em).toLocaleDateString('pt-BR')}
+                    {new Date(item.created_at).toLocaleDateString('pt-BR')}
                   </Text>
                 </View>
                 <Text style={styles.commentText}>{item.texto}</Text>
@@ -141,19 +168,21 @@ export default function SpeciesDetailsScreen({ speciesId, onBack }) {
             ))
           )}
 
-          <View style={styles.addCommentContainer}>
-            <TextInput
-              style={styles.commentInput}
-              placeholder="Adicionar nota ou observação..."
-              placeholderTextColor="#8596A0"
-              value={newCommentText}
-              onChangeText={setNewCommentText}
-              multiline
-            />
-            <TouchableOpacity style={styles.sendButton} onPress={handleAddComment}>
-              <Text style={styles.sendButtonText}>Enviar</Text>
-            </TouchableOpacity>
-          </View>
+          {user && (
+            <View style={styles.addCommentContainer}>
+              <TextInput
+                style={styles.commentInput}
+                placeholder="Adicionar nota..."
+                placeholderTextColor="#8596A0"
+                value={newCommentText}
+                onChangeText={setNewCommentText}
+                multiline
+              />
+              <TouchableOpacity style={styles.sendButton} onPress={handleAddComment}>
+                <Text style={styles.sendButtonText}>Enviar</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -167,6 +196,11 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   content: {
     padding: 24,

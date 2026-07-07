@@ -155,19 +155,21 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 48,
-    alignItems: 'flex-start',
+    alignItems: 'center', // Centralized header
   },
   title: {
     fontSize: 34,
     fontWeight: '800',
     color: theme.colors.textPrimary,
     letterSpacing: -1,
+    textAlign: 'center', // Centralized text
   },
   subtitle: {
     fontSize: 16,
     color: theme.colors.textSecondary,
     marginTop: 8,
     fontWeight: '400',
+    textAlign: 'center', // Centralized text
   },
   form: {
     width: '100%',

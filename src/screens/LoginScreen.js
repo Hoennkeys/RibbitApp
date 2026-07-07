@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Ribbit — Login Screen
+// Ribbit — Login Screen (Apple Design System)
 // Location: C:\Ribbit\RibbitApp\src\screens\LoginScreen.js
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -12,11 +12,11 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Image,
   Alert,
   ActivityIndicator,
 } from 'react-native';
 import supabase from '../services/supabaseClient';
+import { theme } from '../utils/theme';
 
 export default function LoginScreen({ onLogin, onGuest, onGoToSignUp }) {
   const [email, setEmail] = useState('');
@@ -38,8 +38,6 @@ export default function LoginScreen({ onLogin, onGuest, onGoToSignUp }) {
 
       if (error) throw error;
 
-      // O App.js vai detectar a mudança de sessão automaticamente via onAuthStateChange
-      // mas chamamos o onLogin caso haja alguma lógica local
       if (onLogin) onLogin(data.user);
     } catch (error) {
       Alert.alert('Erro no Login', error.message);
@@ -61,23 +59,26 @@ export default function LoginScreen({ onLogin, onGuest, onGoToSignUp }) {
         </View>
 
         <View style={styles.form}>
-          <TextInput
-            style={styles.input}
-            placeholder="E-mail"
-            placeholderTextColor="#8596A0"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Senha"
-            placeholderTextColor="#8596A0"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="E-mail"
+              placeholderTextColor={theme.colors.textSecondary}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            <View style={styles.separator} />
+            <TextInput
+              style={styles.input}
+              placeholder="Senha"
+              placeholderTextColor={theme.colors.textSecondary}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+          </View>
 
           <TouchableOpacity
             style={styles.loginButton}
@@ -85,7 +86,7 @@ export default function LoginScreen({ onLogin, onGuest, onGoToSignUp }) {
             disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator color="#121B22" />
+              <ActivityIndicator color="#FFFFFF" />
             ) : (
               <Text style={styles.loginButtonText}>Entrar</Text>
             )}
@@ -110,7 +111,7 @@ export default function LoginScreen({ onLogin, onGuest, onGoToSignUp }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121B22',
+    backgroundColor: theme.colors.background,
   },
   content: {
     flex: 1,
@@ -119,75 +120,81 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: 64,
   },
   logoEmoji: {
-    fontSize: 64,
-    marginBottom: 10,
+    fontSize: 80,
+    marginBottom: 16,
   },
   logoText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#2ECC71',
-    letterSpacing: 1,
+    fontSize: 40,
+    fontWeight: '800',
+    color: theme.colors.textPrimary,
+    letterSpacing: -1,
   },
   tagline: {
-    fontSize: 14,
-    color: '#8596A0',
-    marginTop: 4,
+    fontSize: 16,
+    color: theme.colors.textSecondary,
+    marginTop: 8,
+    fontWeight: '400',
   },
   form: {
     width: '100%',
   },
+  inputContainer: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 14,
+    marginBottom: 24,
+    overflow: 'hidden',
+    ...theme.shadows.soft,
+  },
   input: {
-    backgroundColor: '#1F2C34',
-    borderRadius: 12,
     padding: 16,
-    color: '#E9EDEF',
-    fontSize: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#2A3942',
+    color: theme.colors.textPrimary,
+    fontSize: 17,
+    height: 56,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: theme.colors.background,
+    marginHorizontal: 16,
   },
   loginButton: {
-    backgroundColor: '#2ECC71',
-    borderRadius: 12,
+    backgroundColor: theme.colors.primary,
+    borderRadius: 14,
     padding: 16,
     alignItems: 'center',
-    marginTop: 8,
-    shadowColor: '#2ECC71',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 6,
+    height: 56,
+    justifyContent: 'center',
+    ...theme.shadows.medium,
   },
   loginButtonText: {
-    color: '#121B22',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '600',
   },
   guestButton: {
     padding: 16,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 12,
   },
   guestButtonText: {
-    color: '#8596A0',
-    fontSize: 14,
-    fontWeight: '600',
+    color: theme.colors.accent,
+    fontSize: 15,
+    fontWeight: '500',
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 40,
+    marginTop: 48,
   },
   footerText: {
-    color: '#8596A0',
-    fontSize: 14,
+    color: theme.colors.textSecondary,
+    fontSize: 15,
   },
   signUpText: {
-    color: '#2ECC71',
-    fontSize: 14,
-    fontWeight: 'bold',
+    color: theme.colors.primary,
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

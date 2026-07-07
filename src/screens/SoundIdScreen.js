@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// RibbitApp — Sound ID Screen
+// Ribbit — Sound ID Screen (Apple Design System)
 // Location: C:\Ribbit\RibbitApp\src\screens\SoundIdScreen.js
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -17,6 +17,7 @@ import Spectrogram from '../components/Spectrogram';
 import { dataService } from '../services/dataService';
 import supabase from '../services/supabaseClient';
 import SpeciesDetailsScreen from './SpeciesDetailsScreen';
+import { theme } from '../utils/theme';
 
 export default function SoundIdScreen() {
   const [isRecording, setIsRecording] = useState(false);
@@ -57,13 +58,10 @@ export default function SoundIdScreen() {
     setIsRecording(false);
     setIsAnalyzing(true);
     
-    // Análise simulada com dados reais do banco
     setTimeout(async () => {
       try {
         const allSpecies = await dataService.getSpecies();
         setIsAnalyzing(false);
-
-        // Simula matching (em um app real isso seria via API de IA)
         if (allSpecies.length > 0) {
           setSuggestions([
             { ...allSpecies[0], matchChance: 96 },
@@ -82,13 +80,9 @@ export default function SoundIdScreen() {
       Alert.alert('Aviso', 'Você precisa estar logado para salvar observações.');
       return;
     }
-
     try {
       await dataService.addObservation(species.id, 'Localização GPS', userId);
-      Alert.alert(
-        '🐸 Sucesso!',
-        `Sua observação de "${species.nome_popular}" foi enviada para o banco de dados. Você ganhou 50 XP!`,
-      );
+      Alert.alert('🐸 Sucesso!', `Sua observação de "${species.nome_popular}" foi enviada.`);
       setSuggestions([]);
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível salvar a observação.');
@@ -112,11 +106,13 @@ export default function SoundIdScreen() {
       </View>
 
       <View style={styles.recordingArea}>
-        <Spectrogram isActive={isRecording} color="#2ECC71" />
+        <View style={styles.spectrogramContainer}>
+           <Spectrogram isActive={isRecording} color={theme.colors.primary} />
+        </View>
         
         <View style={styles.timerContainer}>
           <Text style={styles.timerText}>
-            {isRecording ? `Gravando: 00:0${timer}` : 'Pronto para gravar'}
+            {isRecording ? `00:0${timer}` : 'PRONTO PARA GRAVAR'}
           </Text>
         </View>
 
@@ -142,8 +138,8 @@ export default function SoundIdScreen() {
 
         {isAnalyzing && (
           <View style={styles.analyzingContainer}>
-            <ActivityIndicator size="large" color="#2ECC71" />
-            <Text style={styles.analyzingText}>Analisando espectrograma de áudio...</Text>
+            <ActivityIndicator size="large" color={theme.colors.primary} />
+            <Text style={styles.analyzingText}>Analisando espectrograma...</Text>
           </View>
         )}
       </View>
@@ -183,97 +179,105 @@ export default function SoundIdScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121B22',
+    backgroundColor: theme.colors.background,
   },
   content: {
     padding: 24,
-    paddingBottom: 100,
+    paddingTop: 32,
+    paddingBottom: 180,
   },
   header: {
-    alignItems: 'center',
-    marginBottom: 30,
+    alignItems: 'flex-start',
+    marginBottom: 32,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#E9EDEF',
+    fontSize: 34,
+    fontWeight: '800',
+    color: theme.colors.textPrimary,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 14,
-    color: '#8596A0',
-    marginTop: 6,
-    textAlign: 'center',
+    fontSize: 16,
+    color: theme.colors.textSecondary,
+    marginTop: 4,
   },
   recordingArea: {
     alignItems: 'center',
-    marginBottom: 40,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 24,
+    padding: 32,
+    ...theme.shadows.soft,
+    marginBottom: 32,
+  },
+  spectrogramContainer: {
+    width: '100%',
+    height: 120,
+    backgroundColor: theme.colors.background,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 24,
   },
   timerContainer: {
-    marginVertical: 20,
+    marginBottom: 24,
   },
   timerText: {
-    color: '#E9EDEF',
-    fontSize: 16,
-    fontWeight: '600',
+    color: theme.colors.primary,
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
   recordButton: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#2ECC71',
+    backgroundColor: theme.colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#2ECC71',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 8,
+    ...theme.shadows.medium,
   },
   recordButtonInner: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#121B22',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#FFFFFF',
   },
   stopButton: {
-    backgroundColor: '#E74C3C',
-    shadowColor: '#E74C3C',
+    backgroundColor: '#FF3B30',
   },
   stopButtonInner: {
-    width: 26,
-    height: 26,
+    width: 24,
+    height: 24,
     borderRadius: 4,
-    backgroundColor: '#121B22',
+    backgroundColor: '#FFFFFF',
   },
   analyzingContainer: {
     alignItems: 'center',
-    marginTop: 10,
   },
   analyzingText: {
-    color: '#2ECC71',
+    color: theme.colors.textSecondary,
     fontSize: 15,
-    fontWeight: '600',
-    marginTop: 12,
+    fontWeight: '500',
+    marginTop: 16,
   },
   suggestionsContainer: {
     width: '100%',
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#E9EDEF',
+    fontSize: 22,
+    fontWeight: '700',
+    color: theme.colors.textPrimary,
     marginBottom: 16,
+    letterSpacing: -0.3,
   },
   suggestionCard: {
-    backgroundColor: '#1F2C34',
+    backgroundColor: theme.colors.surface,
     borderRadius: 16,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#2A3942',
+    ...theme.shadows.soft,
   },
   suggestionInfo: {
     flexDirection: 'row',
@@ -281,42 +285,40 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   badge: {
-    backgroundColor: '#2ECC71',
+    backgroundColor: 'rgba(52, 199, 89, 0.1)',
     paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-    marginRight: 14,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    marginRight: 12,
   },
   badgeText: {
-    color: '#121B22',
-    fontSize: 13,
-    fontWeight: 'bold',
+    color: theme.colors.primary,
+    fontSize: 12,
+    fontWeight: '700',
   },
   suggestionTextContainer: {
     flex: 1,
   },
   suggestionName: {
-    color: '#E9EDEF',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: theme.colors.textPrimary,
+    fontSize: 17,
+    fontWeight: '700',
   },
   suggestionScientific: {
-    color: '#8596A0',
+    color: theme.colors.textSecondary,
     fontSize: 13,
     fontStyle: 'italic',
     marginTop: 2,
   },
   saveButton: {
-    backgroundColor: '#2A3942',
+    backgroundColor: theme.colors.primary,
     paddingVertical: 8,
     paddingHorizontal: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#3D5361',
+    borderRadius: 12,
   },
   saveButtonText: {
-    color: '#2ECC71',
+    color: '#FFFFFF',
     fontSize: 13,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
 });

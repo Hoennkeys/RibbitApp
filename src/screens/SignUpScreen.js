@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Ribbit — Sign Up Screen
+// Ribbit — Sign Up Screen (Apple Design System)
 // Location: C:\Ribbit\RibbitApp\src\screens\SignUpScreen.js
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -16,6 +16,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import supabase from '../services/supabaseClient';
+import { theme } from '../utils/theme';
 
 export default function SignUpScreen({ onBack, onSignUpSuccess }) {
   const [name, setName] = useState('');
@@ -68,7 +69,7 @@ export default function SignUpScreen({ onBack, onSignUpSuccess }) {
     >
       <View style={styles.content}>
         <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Text style={styles.backButtonText}>← Voltar</Text>
+          <Text style={styles.backButtonText}>‹ Voltar</Text>
         </TouchableOpacity>
 
         <View style={styles.header}>
@@ -77,38 +78,43 @@ export default function SignUpScreen({ onBack, onSignUpSuccess }) {
         </View>
 
         <View style={styles.form}>
-          <TextInput
-            style={styles.input}
-            placeholder="Nome Completo"
-            placeholderTextColor="#8596A0"
-            value={name}
-            onChangeText={setName}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="E-mail"
-            placeholderTextColor="#8596A0"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Senha"
-            placeholderTextColor="#8596A0"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Confirmar Senha"
-            placeholderTextColor="#8596A0"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry
-          />
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Nome Completo"
+              placeholderTextColor={theme.colors.textSecondary}
+              value={name}
+              onChangeText={setName}
+            />
+            <View style={styles.separator} />
+            <TextInput
+              style={styles.input}
+              placeholder="E-mail"
+              placeholderTextColor={theme.colors.textSecondary}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            <View style={styles.separator} />
+            <TextInput
+              style={styles.input}
+              placeholder="Senha"
+              placeholderTextColor={theme.colors.textSecondary}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+            <View style={styles.separator} />
+            <TextInput
+              style={styles.input}
+              placeholder="Confirmar Senha"
+              placeholderTextColor={theme.colors.textSecondary}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry
+            />
+          </View>
 
           <TouchableOpacity
             style={styles.signUpButton}
@@ -116,7 +122,7 @@ export default function SignUpScreen({ onBack, onSignUpSuccess }) {
             disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator color="#121B22" />
+              <ActivityIndicator color="#FFFFFF" />
             ) : (
               <Text style={styles.signUpButtonText}>Cadastrar</Text>
             )}
@@ -130,7 +136,7 @@ export default function SignUpScreen({ onBack, onSignUpSuccess }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121B22',
+    backgroundColor: theme.colors.background,
   },
   content: {
     flex: 1,
@@ -140,58 +146,62 @@ const styles = StyleSheet.create({
   backButton: {
     position: 'absolute',
     top: 60,
-    left: 32,
+    left: 24,
   },
   backButtonText: {
-    color: '#2ECC71',
-    fontSize: 16,
-    fontWeight: '600',
+    color: theme.colors.accent,
+    fontSize: 17,
+    fontWeight: '500',
   },
   header: {
-    marginBottom: 40,
-    alignItems: 'center',
+    marginBottom: 48,
+    alignItems: 'flex-start',
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#E9EDEF',
+    fontSize: 34,
+    fontWeight: '800',
+    color: theme.colors.textPrimary,
+    letterSpacing: -1,
   },
   subtitle: {
     fontSize: 16,
-    color: '#8596A0',
+    color: theme.colors.textSecondary,
     marginTop: 8,
-    textAlign: 'center',
+    fontWeight: '400',
   },
   form: {
     width: '100%',
   },
+  inputContainer: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 14,
+    marginBottom: 24,
+    overflow: 'hidden',
+    ...theme.shadows.soft,
+  },
   input: {
-    backgroundColor: '#1F2C34',
-    borderRadius: 12,
     padding: 16,
-    color: '#E9EDEF',
-    fontSize: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#2A3942',
+    color: theme.colors.textPrimary,
+    fontSize: 17,
+    height: 56,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: theme.colors.background,
+    marginHorizontal: 16,
   },
   signUpButton: {
-    backgroundColor: '#2ECC71',
-    borderRadius: 12,
+    backgroundColor: theme.colors.primary,
+    borderRadius: 14,
     padding: 16,
     alignItems: 'center',
-    marginTop: 8,
-    shadowColor: '#2ECC71',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 6,
-    minHeight: 56,
+    height: 56,
     justifyContent: 'center',
+    ...theme.shadows.medium,
   },
   signUpButtonText: {
-    color: '#121B22',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '600',
   },
 });

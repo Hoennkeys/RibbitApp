@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// RibbitApp — Species Details Screen
+// Ribbit — Species Details Screen (Apple Design System)
 // Location: C:\Ribbit\RibbitApp\src\screens\SpeciesDetailsScreen.js
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -18,6 +18,7 @@ import {
 import Spectrogram from '../components/Spectrogram';
 import { dataService } from '../services/dataService';
 import { supabase } from '../services/supabaseClient';
+import { theme } from '../utils/theme';
 
 export default function SpeciesDetailsScreen({ speciesId, onBack }) {
   const [species, setSpecies] = useState(null);
@@ -40,23 +41,17 @@ export default function SpeciesDetailsScreen({ speciesId, onBack }) {
     try {
       const sData = await dataService.getSpeciesById(speciesId);
       setSpecies(sData);
-
       const cData = await dataService.getComments(speciesId);
       setComments(cData);
     } catch (error) {
-      console.error('Erro ao carregar detalhes:', error);
+      console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePlayToggle = () => {
-    setIsPlaying(!isPlaying);
-  };
-
   const handleAddComment = async () => {
     if (!newCommentText.trim() || !user) return;
-
     try {
       const userName = user.user_metadata?.full_name || user.email.split('@')[0];
       await dataService.addComment(speciesId, user.id, userName, newCommentText);
@@ -64,14 +59,14 @@ export default function SpeciesDetailsScreen({ speciesId, onBack }) {
       const cData = await dataService.getComments(speciesId);
       setComments(cData);
     } catch (error) {
-      console.error('Erro ao adicionar comentário:', error);
+      console.error(error);
     }
   };
 
   if (loading) {
     return (
       <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color="#2ECC71" />
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
@@ -94,7 +89,7 @@ export default function SpeciesDetailsScreen({ speciesId, onBack }) {
     >
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Text style={styles.backButtonText}>← Voltar</Text>
+          <Text style={styles.backButtonText}>‹ Voltar</Text>
         </TouchableOpacity>
 
         <View style={styles.header}>
@@ -112,68 +107,54 @@ export default function SpeciesDetailsScreen({ speciesId, onBack }) {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Canto do Anfíbio (Player)</Text>
-          <Spectrogram isActive={isPlaying} color="#3498DB" />
-          
-          <View style={styles.playerControls}>
+          <Text style={styles.sectionTitle}>Canto do Anfíbio</Text>
+          <View style={styles.playerCard}>
+            <Spectrogram isActive={isPlaying} color={theme.colors.primary} />
             <TouchableOpacity
               style={[styles.playButton, isPlaying && styles.pauseButton]}
-              onPress={handlePlayToggle}
-              activeOpacity={0.8}
+              onPress={() => setIsPlaying(!isPlaying)}
             >
               <Text style={styles.playButtonText}>
-                {isPlaying ? 'Pausar Canto' : 'Ouvir Canto 🔊'}
+                {isPlaying ? 'PAUSAR' : 'OUVIR CANTO 🔊'}
               </Text>
             </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Descrição da Espécie</Text>
+          <Text style={styles.sectionTitle}>Descrição</Text>
           <View style={styles.infoCard}>
             <Text style={styles.bodyText}>{species.descricao}</Text>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Dicas de Identificação</Text>
-          <View style={[styles.infoCard, styles.tipsCard]}>
-            <Text style={styles.bodyText}>{species.dicas_identificacao}</Text>
-          </View>
-        </View>
-
-        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Fato Curioso</Text>
           <View style={[styles.infoCard, styles.factCard]}>
-            <Text style={[styles.bodyText, styles.factText]}>💡 {species.fatos_curiosos}</Text>
+            <Text style={styles.factText}>💡 {species.fatos_curiosos}</Text>
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Discussão Científica ({comments.length})</Text>
-          
-          {comments.length === 0 ? (
-            <Text style={styles.noCommentsText}>Nenhum comentário científico ainda. Seja o primeiro!</Text>
-          ) : (
-            comments.map((item) => (
-              <View key={item.id} style={styles.commentCard}>
-                <View style={styles.commentHeader}>
-                  <Text style={styles.commentAuthor}>{item.usuario_nome}</Text>
-                  <Text style={styles.commentTime}>
-                    {new Date(item.created_at).toLocaleDateString('pt-BR')}
-                  </Text>
-                </View>
-                <Text style={styles.commentText}>{item.texto}</Text>
+          {comments.map((item) => (
+            <View key={item.id} style={styles.commentCard}>
+              <View style={styles.commentHeader}>
+                <Text style={styles.commentAuthor}>{item.usuario_nome}</Text>
+                <Text style={styles.commentTime}>
+                  {new Date(item.created_at).toLocaleDateString('pt-BR')}
+                </Text>
               </View>
-            ))
-          )}
+              <Text style={styles.commentText}>{item.texto}</Text>
+            </View>
+          ))}
 
           {user && (
             <View style={styles.addCommentContainer}>
               <TextInput
                 style={styles.commentInput}
-                placeholder="Adicionar nota..."
-                placeholderTextColor="#8596A0"
+                placeholder="Adicionar nota científica..."
+                placeholderTextColor={theme.colors.textSecondary}
                 value={newCommentText}
                 onChangeText={setNewCommentText}
                 multiline
@@ -190,198 +171,39 @@ export default function SpeciesDetailsScreen({ speciesId, onBack }) {
 }
 
 const styles = StyleSheet.create({
-  keyboardContainer: {
-    flex: 1,
-    backgroundColor: '#121B22',
-  },
-  container: {
-    flex: 1,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    padding: 24,
-    paddingBottom: 50,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#121B22',
-  },
-  errorText: {
-    color: '#E9EDEF',
-    fontSize: 16,
-    marginBottom: 20,
-  },
-  backButton: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#1F2C34',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#2A3942',
-  },
-  backButtonText: {
-    color: '#2ECC71',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  header: {
-    marginBottom: 30,
-  },
-  nomePopular: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#E9EDEF',
-  },
-  nomeCientifico: {
-    fontSize: 16,
-    fontStyle: 'italic',
-    color: '#8596A0',
-    marginTop: 4,
-  },
-  tagsRow: {
-    flexDirection: 'row',
-    marginTop: 12,
-  },
-  tag: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginRight: 10,
-  },
-  tagRegion: {
-    backgroundColor: '#1A3326',
-  },
-  tagHabitat: {
-    backgroundColor: '#1A2933',
-  },
-  tagText: {
-    color: '#2ECC71',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  section: {
-    marginBottom: 28,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#E9EDEF',
-    marginBottom: 12,
-  },
-  infoCard: {
-    backgroundColor: '#1F2C34',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#2A3942',
-  },
-  tipsCard: {
-    borderColor: '#3D5361',
-  },
-  factCard: {
-    backgroundColor: '#1B2C3A',
-    borderColor: '#3498DB',
-  },
-  factText: {
-    color: '#E9EDEF',
-  },
-  bodyText: {
-    fontSize: 14,
-    color: '#8596A0',
-    lineHeight: 22,
-  },
-  playerControls: {
-    alignItems: 'center',
-    marginTop: 14,
-  },
-  playButton: {
-    backgroundColor: '#3498DB',
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    borderRadius: 24,
-    shadowColor: '#3498DB',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 6,
-  },
-  pauseButton: {
-    backgroundColor: '#E74C3C',
-    shadowColor: '#E74C3C',
-  },
-  playButtonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  noCommentsText: {
-    color: '#8596A0',
-    fontSize: 14,
-    fontStyle: 'italic',
-    marginBottom: 16,
-  },
-  commentCard: {
-    backgroundColor: '#1F2C34',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#2A3942',
-  },
-  commentHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  commentAuthor: {
-    color: '#2ECC71',
-    fontWeight: 'bold',
-    fontSize: 13,
-  },
-  commentTime: {
-    color: '#8596A0',
-    fontSize: 11,
-  },
-  commentText: {
-    color: '#E9EDEF',
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  addCommentContainer: {
-    marginTop: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  commentInput: {
-    flex: 1,
-    backgroundColor: '#1F2C34',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    color: '#E9EDEF',
-    fontSize: 13,
-    borderWidth: 1,
-    borderColor: '#2A3942',
-    marginRight: 10,
-    maxHeight: 80,
-  },
-  sendButton: {
-    backgroundColor: '#2ECC71',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-  },
-  sendButtonText: {
-    color: '#121B22',
-    fontWeight: 'bold',
-    fontSize: 13,
-  },
+  keyboardContainer: { flex: 1, backgroundColor: theme.colors.background },
+  container: { flex: 1 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  content: { padding: 24, paddingTop: 64, paddingBottom: 100 },
+  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
+  errorText: { color: theme.colors.textPrimary, fontSize: 16, marginBottom: 20 },
+  backButton: { marginBottom: 24 },
+  backButtonText: { color: theme.colors.accent, fontSize: 17, fontWeight: '500' },
+  header: { marginBottom: 32 },
+  nomePopular: { fontSize: 34, fontWeight: '800', color: theme.colors.textPrimary, letterSpacing: -1 },
+  nomeCientifico: { fontSize: 18, fontStyle: 'italic', color: theme.colors.textSecondary, marginTop: 4 },
+  tagsRow: { flexDirection: 'row', marginTop: 16 },
+  tag: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, marginRight: 10 },
+  tagRegion: { backgroundColor: 'rgba(52, 199, 89, 0.1)' },
+  tagHabitat: { backgroundColor: 'rgba(0, 113, 227, 0.1)' },
+  tagText: { color: theme.colors.primary, fontSize: 12, fontWeight: '700' },
+  section: { marginBottom: 32 },
+  sectionTitle: { fontSize: 20, fontWeight: '700', color: theme.colors.textPrimary, marginBottom: 12 },
+  playerCard: { backgroundColor: theme.colors.surface, borderRadius: 20, padding: 20, alignItems: 'center', ...theme.shadows.soft },
+  playButton: { backgroundColor: theme.colors.primary, paddingVertical: 12, paddingHorizontal: 32, borderRadius: 14, marginTop: 20, ...theme.shadows.medium },
+  pauseButton: { backgroundColor: '#FF3B30' },
+  playButtonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
+  infoCard: { backgroundColor: theme.colors.surface, borderRadius: 16, padding: 20, ...theme.shadows.soft },
+  factCard: { backgroundColor: 'rgba(52, 199, 89, 0.05)', borderColor: 'rgba(52, 199, 89, 0.2)', borderWidth: 1 },
+  factText: { color: theme.colors.textPrimary, fontSize: 15, lineHeight: 22 },
+  bodyText: { fontSize: 15, color: theme.colors.textSecondary, lineHeight: 22 },
+  commentCard: { backgroundColor: theme.colors.surface, borderRadius: 14, padding: 16, marginBottom: 12, ...theme.shadows.soft },
+  commentHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  commentAuthor: { color: theme.colors.primary, fontWeight: '700', fontSize: 14 },
+  commentTime: { color: theme.colors.textSecondary, fontSize: 12 },
+  commentText: { color: theme.colors.textPrimary, fontSize: 14, lineHeight: 20 },
+  addCommentContainer: { marginTop: 16, flexDirection: 'row', alignItems: 'center' },
+  commentInput: { flex: 1, backgroundColor: theme.colors.surface, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, color: theme.colors.textPrimary, fontSize: 15, marginRight: 10, ...theme.shadows.soft, maxHeight: 100 },
+  sendButton: { backgroundColor: theme.colors.primary, paddingVertical: 14, paddingHorizontal: 20, borderRadius: 14, ...theme.shadows.medium },
+  sendButtonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
 });

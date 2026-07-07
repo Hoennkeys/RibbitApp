@@ -375,7 +375,11 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
         <Text style={styles.sectionLabel}>ATIVIDADE</Text>
         <View style={styles.groupContainer}>
           <TouchableOpacity style={styles.menuItem} onPress={() => setCurrentView('collection')}>
-            <Text style={styles.menuIcon}>🐸</Text>
+            <Image
+              source={require('../assets/images/logo_transparent.png')}
+              style={styles.menuIconImage}
+              resizeMode="contain"
+            />
             <Text style={styles.menuText}>Minha Coleção ({observations.length})</Text>
             <Text style={styles.menuArrow}>›</Text>
           </TouchableOpacity>
@@ -454,6 +458,7 @@ const styles = StyleSheet.create({
   menuItem: { flexDirection: 'row', alignItems: 'center', padding: 16 },
   separator: { height: 1, backgroundColor: theme.colors.background, marginHorizontal: 16 },
   menuIcon: { fontSize: 20, marginRight: 12 },
+  menuIconImage: { width: 22, height: 22, marginRight: 12 },
   menuText: { flex: 1, color: theme.colors.textPrimary, fontSize: 17, fontWeight: '400' },
   menuArrow: { color: theme.colors.border, fontSize: 20 },
   subHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingTop: 64, paddingBottom: 16, backgroundColor: theme.colors.surface },

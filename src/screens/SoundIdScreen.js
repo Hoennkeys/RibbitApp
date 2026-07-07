@@ -82,7 +82,7 @@ export default function SoundIdScreen() {
     }
     try {
       await dataService.addObservation(species.id, 'Localização GPS', userId);
-      Alert.alert('🐸 Sucesso!', `Sua observação de "${species.nome_popular}" foi enviada.`);
+      Alert.alert('✅ Sucesso!', `Sua observação de "${species.nome_popular}" foi enviada.`);
       setSuggestions([]);
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível salvar a observação.');

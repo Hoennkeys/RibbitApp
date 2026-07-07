@@ -14,6 +14,7 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import supabase from '../services/supabaseClient';
 import { theme } from '../utils/theme';
@@ -53,7 +54,11 @@ export default function LoginScreen({ onLogin, onGuest, onGoToSignUp }) {
     >
       <View style={styles.content}>
         <View style={styles.logoContainer}>
-          <Text style={styles.logoEmoji}>🐸</Text>
+          <Image
+            source={require('../assets/images/logo_plants_square.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
           <Text style={styles.logoText}>Ribbit</Text>
           <Text style={styles.tagline}>Identificação Científica de Anfíbios</Text>
         </View>
@@ -122,8 +127,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 64,
   },
-  logoEmoji: {
-    fontSize: 80,
+  logoImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     marginBottom: 16,
   },
   logoText: {

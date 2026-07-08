@@ -57,9 +57,33 @@ export default function SoundIdScreen() {
   const [userId, setUserId] = useState(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (user) {
         setUserId(user.id);
+        
+        // RLS Trial Suite
+        console.log("=== RUNNING RLS DIAGNOSTIC TRIALS ===");
+        const trials = [
+          { name: "Explicit 'pendente'", payload: { usuario_id: user.id, localizacao: 'Debug', status_revisao: 'pendente' } },
+          { name: "Explicit 'pending'", payload: { usuario_id: user.id, localizacao: 'Debug', status_revisao: 'pending' } },
+          { name: "Explicit 'aprovado'", payload: { usuario_id: user.id, localizacao: 'Debug', status_revisao: 'aprovado' } },
+          { name: "Explicit 'approved'", payload: { usuario_id: user.id, localizacao: 'Debug', status_revisao: 'approved' } },
+          { name: "Omitted status_revisao", payload: { usuario_id: user.id, localizacao: 'Debug' } }
+        ];
+
+        for (const trial of trials) {
+          try {
+            const { data, error } = await supabase.from('observations').insert(trial.payload);
+            if (error) {
+              console.log(`Trial [${trial.name}] FAILED: Code=${error.code}, Message="${error.message}"`);
+            } else {
+              console.log(`Trial [${trial.name}] SUCCEEDED!`);
+            }
+          } catch (e) {
+            console.log(`Trial [${trial.name}] CRASHED: ${e.message}`);
+          }
+        }
+        console.log("=======================================");
       } else {
         setUserId(null);
       }

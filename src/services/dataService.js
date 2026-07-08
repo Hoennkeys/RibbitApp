@@ -330,13 +330,28 @@ export const dataService = {
         // Envio ultra-estável via ArrayBuffer para imagens e arquivos com base64
         uploadBody = decode(base64);
       } else {
-        // Envio de fallback (ex: para áudios) usando Blob nativo via fetch local
+        // Para áudios (onde não temos base64 direto), lemos o arquivo local como Blob,
+        // convertemos para Base64 usando o FileReader nativo do React Native e decodificamos
+        // para ArrayBuffer. Isso evita enviar Blobs na ponte de rede externa do Android,
+        // o que causa o bug crônico 'Network request failed'.
         let uploadUri = localUri;
         if (Platform.OS === 'android' && !uploadUri.startsWith('file://') && !uploadUri.startsWith('content://') && !uploadUri.startsWith('http')) {
           uploadUri = `file://${uploadUri}`;
         }
+        
         const response = await fetch(uploadUri);
-        uploadBody = await response.blob();
+        const blob = await response.blob();
+        
+        // Conversão estável de Blob para Base64 em JS
+        const reader = new FileReader();
+        const base64Data = await new Promise((resolve, reject) => {
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+        
+        const base64Pure = base64Data.split(',')[1];
+        uploadBody = decode(base64Pure);
       }
 
       const { data, error } = await supabase.storage

@@ -17,10 +17,12 @@ import {
 import { dataService } from '../services/dataService';
 import SpeciesDetailsScreen from './SpeciesDetailsScreen';
 import { theme } from '../utils/theme';
+import { useLanguage } from '../utils/i18n';
 
 const REGIONS = ['Todos', 'Mata Atlântica', 'Cerrado e Caatinga', 'Sudeste e Centro-Oeste'];
 
 export default function ExploreScreen() {
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('Todos');
   const [selectedSpeciesId, setSelectedSpeciesId] = useState(null);
@@ -65,8 +67,8 @@ export default function ExploreScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Explorar Regiões</Text>
-        <Text style={styles.subtitle}>Descubra os anfíbios que habitam o Brasil</Text>
+        <Text style={styles.title}>{t('explore_title')}</Text>
+        <Text style={styles.subtitle}>{t('explore_subtitle')}</Text>
       </View>
 
       <View style={styles.searchBarContainer}>
@@ -74,7 +76,7 @@ export default function ExploreScreen() {
           <Text style={styles.searchIcon}>🔍</Text>
           <TextInput
             style={styles.searchBar}
-            placeholder="Buscar por nome ou espécie..."
+            placeholder={t('search_placeholder')}
             placeholderTextColor={theme.colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -99,7 +101,7 @@ export default function ExploreScreen() {
                   selectedRegion === region && styles.regionButtonTextActive,
                 ]}
               >
-                {region === 'Todos' ? 'Brasil Inteiro' : region}
+                {region === 'Todos' ? t('all_brazil') : region}
               </Text>
             </TouchableOpacity>
           ))}
@@ -116,7 +118,7 @@ export default function ExploreScreen() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>Nenhum anfíbio correspondente encontrado.</Text>
+              <Text style={styles.emptyText}>{t('empty_search')}</Text>
             </View>
           }
           renderItem={({ item }) => (

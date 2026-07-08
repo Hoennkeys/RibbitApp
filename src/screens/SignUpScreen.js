@@ -17,8 +17,10 @@ import {
 } from 'react-native';
 import supabase from '../services/supabaseClient';
 import { theme } from '../utils/theme';
+import { useLanguage } from '../utils/i18n';
 
 export default function SignUpScreen({ onBack, onSignUpSuccess }) {
+  const { t } = useLanguage();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -52,7 +54,7 @@ export default function SignUpScreen({ onBack, onSignUpSuccess }) {
 
       Alert.alert(
         'Sucesso!',
-        'Sua conta foi criada. Verifique seu e-mail para confirmar o cadastro.',
+        t('success_signup'),
         [{ text: 'OK', onPress: onSignUpSuccess }]
       );
     } catch (error) {
@@ -69,19 +71,19 @@ export default function SignUpScreen({ onBack, onSignUpSuccess }) {
     >
       <View style={styles.content}>
         <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Text style={styles.backButtonText}>‹ Voltar</Text>
+          <Text style={styles.backButtonText}>{t('back')}</Text>
         </TouchableOpacity>
 
         <View style={styles.header}>
-          <Text style={styles.title}>Criar Conta</Text>
-          <Text style={styles.subtitle}>Junte-se à nossa comunidade de observadores</Text>
+          <Text style={styles.title}>{t('sign_up')}</Text>
+          <Text style={styles.subtitle}>{t('signup_subtitle')}</Text>
         </View>
 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Nome Completo"
+              placeholder={t('name')}
               placeholderTextColor={theme.colors.textSecondary}
               value={name}
               onChangeText={setName}
@@ -89,7 +91,7 @@ export default function SignUpScreen({ onBack, onSignUpSuccess }) {
             <View style={styles.separator} />
             <TextInput
               style={styles.input}
-              placeholder="E-mail"
+              placeholder={t('email')}
               placeholderTextColor={theme.colors.textSecondary}
               value={email}
               onChangeText={setEmail}
@@ -99,7 +101,7 @@ export default function SignUpScreen({ onBack, onSignUpSuccess }) {
             <View style={styles.separator} />
             <TextInput
               style={styles.input}
-              placeholder="Senha"
+              placeholder={t('password')}
               placeholderTextColor={theme.colors.textSecondary}
               value={password}
               onChangeText={setPassword}
@@ -108,7 +110,7 @@ export default function SignUpScreen({ onBack, onSignUpSuccess }) {
             <View style={styles.separator} />
             <TextInput
               style={styles.input}
-              placeholder="Confirmar Senha"
+              placeholder={t('confirm_password')}
               placeholderTextColor={theme.colors.textSecondary}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
@@ -124,7 +126,7 @@ export default function SignUpScreen({ onBack, onSignUpSuccess }) {
             {loading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.signUpButtonText}>Cadastrar</Text>
+              <Text style={styles.signUpButtonText}>{t('register')}</Text>
             )}
           </TouchableOpacity>
         </View>

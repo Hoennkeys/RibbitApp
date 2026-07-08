@@ -18,8 +18,10 @@ import { dataService } from '../services/dataService';
 import supabase from '../services/supabaseClient';
 import SpeciesDetailsScreen from './SpeciesDetailsScreen';
 import { theme } from '../utils/theme';
+import { useLanguage } from '../utils/i18n';
 
 export default function SoundIdScreen() {
+  const { t } = useLanguage();
   const [isRecording, setIsRecording] = useState(false);
   const [timer, setTimer] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -70,22 +72,22 @@ export default function SoundIdScreen() {
         }
       } catch (error) {
         setIsAnalyzing(false);
-        Alert.alert('Erro', 'Não foi possível analisar o áudio.');
+        Alert.alert('Erro', t('err_analyze'));
       }
     }, 2000);
   };
 
   const handleSaveObservation = async (species) => {
     if (!userId) {
-      Alert.alert('Aviso', 'Você precisa estar logado para salvar observações.');
+      Alert.alert('Aviso', t('login_warning'));
       return;
     }
     try {
       await dataService.addObservation(species.id, 'Localização GPS', userId);
-      Alert.alert('✅ Sucesso!', `Sua observação de "${species.nome_popular}" foi enviada.`);
+      Alert.alert('✅ Sucesso!', t('obs_saved').replace('{species}', species.nome_popular));
       setSuggestions([]);
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível salvar a observação.');
+      Alert.alert('Erro', t('err_save'));
     }
   };
 
@@ -102,7 +104,7 @@ export default function SoundIdScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Text style={styles.title}>Sound ID</Text>
-        <Text style={styles.subtitle}>Grave o coaxar para identificar o anfíbio</Text>
+        <Text style={styles.subtitle}>{t('soundid_subtitle')}</Text>
       </View>
 
       <View style={styles.recordingArea}>
@@ -112,7 +114,7 @@ export default function SoundIdScreen() {
         
         <View style={styles.timerContainer}>
           <Text style={styles.timerText}>
-            {isRecording ? `00:0${timer}` : 'PRONTO PARA GRAVAR'}
+            {isRecording ? `00:0${timer}` : t('ready_record')}
           </Text>
         </View>
 
@@ -139,14 +141,14 @@ export default function SoundIdScreen() {
         {isAnalyzing && (
           <View style={styles.analyzingContainer}>
             <ActivityIndicator size="large" color={theme.colors.primary} />
-            <Text style={styles.analyzingText}>Analisando espectrograma...</Text>
+            <Text style={styles.analyzingText}>{t('analyzing')}</Text>
           </View>
         )}
       </View>
 
       {suggestions.length > 0 && (
         <View style={styles.suggestionsContainer}>
-          <Text style={styles.sectionTitle}>Espécies Identificadas</Text>
+          <Text style={styles.sectionTitle}>{t('identified_species')}</Text>
           {suggestions.map((spec) => (
             <View key={spec.id} style={styles.suggestionCard}>
               <TouchableOpacity
@@ -166,7 +168,7 @@ export default function SoundIdScreen() {
                 style={styles.saveButton}
                 onPress={() => handleSaveObservation(spec)}
               >
-                <Text style={styles.saveButtonText}>Salvar</Text>
+                <Text style={styles.saveButtonText}>{t('save')}</Text>
               </TouchableOpacity>
             </View>
           ))}

@@ -18,8 +18,10 @@ import {
 } from 'react-native';
 import supabase from '../services/supabaseClient';
 import { theme } from '../utils/theme';
+import { useLanguage } from '../utils/i18n';
 
 export default function LoginScreen({ onLogin, onGuest, onGoToSignUp }) {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -60,14 +62,14 @@ export default function LoginScreen({ onLogin, onGuest, onGoToSignUp }) {
             resizeMode="contain"
           />
           <Text style={styles.logoText}>Ribbit</Text>
-          <Text style={styles.tagline}>Identificação Científica de Anfíbios</Text>
+          <Text style={styles.tagline}>{t('tagline')}</Text>
         </View>
 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="E-mail"
+              placeholder={t('email')}
               placeholderTextColor={theme.colors.textSecondary}
               value={email}
               onChangeText={setEmail}
@@ -77,7 +79,7 @@ export default function LoginScreen({ onLogin, onGuest, onGoToSignUp }) {
             <View style={styles.separator} />
             <TextInput
               style={styles.input}
-              placeholder="Senha"
+              placeholder={t('password')}
               placeholderTextColor={theme.colors.textSecondary}
               value={password}
               onChangeText={setPassword}
@@ -93,19 +95,19 @@ export default function LoginScreen({ onLogin, onGuest, onGoToSignUp }) {
             {loading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.loginButtonText}>Entrar</Text>
+              <Text style={styles.loginButtonText}>{t('login')}</Text>
             )}
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.guestButton} onPress={onGuest} disabled={loading}>
-            <Text style={styles.guestButtonText}>Continuar como Visitante</Text>
+            <Text style={styles.guestButtonText}>{t('guest')}</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Não tem uma conta?</Text>
+          <Text style={styles.footerText}>{t('no_account')}</Text>
           <TouchableOpacity onPress={onGoToSignUp} disabled={loading}>
-            <Text style={styles.signUpText}> Criar conta</Text>
+            <Text style={styles.signUpText}>{t('create_account')}</Text>
           </TouchableOpacity>
         </View>
       </View>

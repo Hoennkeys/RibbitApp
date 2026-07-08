@@ -14,6 +14,7 @@ import {
 import { dataService } from '../services/dataService';
 import SpeciesDetailsScreen from './SpeciesDetailsScreen';
 import { theme } from '../utils/theme';
+import { useLanguage } from '../utils/i18n';
 
 const QUESTIONS = [
   {
@@ -48,10 +49,39 @@ const QUESTIONS = [
 ];
 
 export default function WizardScreen() {
+  const { t } = useLanguage();
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const [results, setResults] = useState([]);
   const [selectedSpeciesId, setSelectedSpeciesId] = useState(null);
+
+  const getTranslatedQuestionTitle = (step) => {
+    if (step === 0) return t('question_1');
+    if (step === 1) return t('question_2');
+    if (step === 2) return t('question_3');
+    return '';
+  };
+
+  const getTranslatedOptionLabel = (step, value) => {
+    if (step === 0) {
+      if (value === 'Área Urbana') return t('q1_opt1');
+      if (value === 'Florestas') return t('q1_opt2');
+      if (value === 'Margens de Lagoas') return t('q1_opt3');
+      if (value === 'Serrapilheira') return t('q1_opt4');
+    }
+    if (step === 1) {
+      if (value === 'grave') return t('q2_opt1');
+      if (value === 'metalico') return t('q2_opt2');
+      if (value === 'estalado') return t('q2_opt3');
+      if (value === 'grilo') return t('q2_opt4');
+    }
+    if (step === 2) {
+      if (value === 'Sudeste') return t('q3_opt1');
+      if (value === 'Mata Atlântica') return t('q3_opt2');
+      if (value === 'Cerrado') return t('q3_opt3');
+    }
+    return value;
+  };
 
   const handleSelectOption = async (value) => {
     const key = QUESTIONS[currentStep].key;
@@ -100,14 +130,14 @@ export default function WizardScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={styles.title}>Assistente</Text>
-        <Text style={styles.subtitle}>Responda e identifique a espécie sem gravar áudio</Text>
+        <Text style={styles.title}>{t('tab_wizard')}</Text>
+        <Text style={styles.subtitle}>{t('wizard_subtitle')}</Text>
       </View>
 
       {currentStep < QUESTIONS.length ? (
         <View style={styles.card}>
-          <Text style={styles.progressText}>Passo {currentStep + 1} de {QUESTIONS.length}</Text>
-          <Text style={styles.questionTitle}>{QUESTIONS[currentStep].title}</Text>
+          <Text style={styles.progressText}>{t('step_x_of_y').replace('{x}', currentStep + 1).replace('{y}', QUESTIONS.length)}</Text>
+          <Text style={styles.questionTitle}>{getTranslatedQuestionTitle(currentStep)}</Text>
 
           <View style={styles.optionsContainer}>
             {QUESTIONS[currentStep].options.map((opt) => (
@@ -117,7 +147,7 @@ export default function WizardScreen() {
                 onPress={() => handleSelectOption(opt.value)}
                 activeOpacity={0.6}
               >
-                <Text style={styles.optionText}>{opt.label}</Text>
+                <Text style={styles.optionText}>{getTranslatedOptionLabel(currentStep, opt.value)}</Text>
                 <Text style={styles.optionChevron}>›</Text>
               </TouchableOpacity>
             ))}
@@ -128,17 +158,17 @@ export default function WizardScreen() {
               style={styles.backStepButton}
               onPress={() => setCurrentStep(prev => prev - 1)}
             >
-              <Text style={styles.backStepText}>Voltar ao passo anterior</Text>
+              <Text style={styles.backStepText}>{t('prev_step')}</Text>
             </TouchableOpacity>
           )}
         </View>
       ) : (
         <View style={styles.resultsContainer}>
-          <Text style={styles.sectionTitle}>Espécies Sugeridas</Text>
+          <Text style={styles.sectionTitle}>{t('suggested_species')}</Text>
           
           {results.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>Nenhuma combinação exata encontrada. Tente novamente.</Text>
+              <Text style={styles.emptyText}>{t('no_matches')}</Text>
             </View>
           ) : (
             results.map((spec) => (
@@ -163,7 +193,7 @@ export default function WizardScreen() {
           )}
 
           <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
-            <Text style={styles.resetButtonText}>Reiniciar Assistente</Text>
+            <Text style={styles.resetButtonText}>{t('reset_wizard')}</Text>
           </TouchableOpacity>
         </View>
       )}

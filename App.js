@@ -19,10 +19,12 @@ import ChatScreen from './src/screens/ChatScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import SignUpScreen from './src/screens/SignUpScreen';
 import FloatingActionButton from './src/components/FloatingActionButton';
+import { LanguageProvider, useLanguage } from './src/utils/i18n';
 
 const Tab = createBottomTabNavigator();
 
-export default function App() {
+function AppContent() {
+  const { t } = useLanguage();
   const [session, setSession] = useState(null);
   const [isGuest, setIsGuest] = useState(false);
   const [isSigningUp, setIsSigningUp] = useState(false);
@@ -126,39 +128,42 @@ export default function App() {
               name="Dashboard"
               component={DashboardScreen}
               options={{
-                tabBarLabel: 'Painel',
+                tabBarLabel: t('tab_dashboard'),
               }}
             />
             <Tab.Screen
               name="SoundID"
               component={SoundIdScreen}
               options={{
-                tabBarLabel: 'Sound ID',
+                tabBarLabel: t('tab_soundid'),
               }}
             />
             <Tab.Screen
               name="Chat"
               component={ChatScreen}
               options={{
-                tabBarLabel: 'Chat',
+                tabBarLabel: t('tab_chat'),
               }}
             />
             <Tab.Screen
               name="Explorar"
               component={ExploreScreen}
               options={{
-                tabBarLabel: 'Explorar',
+                tabBarLabel: t('tab_explore'),
               }}
             />
             <Tab.Screen
               name="Assistente"
               component={WizardScreen}
               options={{
-                tabBarLabel: 'Assistente',
+                tabBarLabel: t('tab_wizard'),
               }}
             />
             <Tab.Screen
               name="Perfil"
+              options={{
+                tabBarLabel: t('tab_profile'),
+              }}
             >
               {() => (
                 <LifeListScreen
@@ -177,6 +182,14 @@ export default function App() {
         </View>
       </NavigationContainer>
     </SafeAreaView>
+  );
+}
+
+export default function App() {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
   );
 }
 

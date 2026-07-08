@@ -648,7 +648,7 @@ export default function ChatScreen({ navigation, route }) {
   const ChatWrapper = KeyboardAvoidingView;
   const chatWrapperProps = Platform.OS === 'ios'
     ? { behavior: 'padding', keyboardVerticalOffset: 90 }
-    : { behavior: 'height', keyboardVerticalOffset: 0 };
+    : { behavior: 'padding', keyboardVerticalOffset: 70 };
 
   return (
     <ChatWrapper style={styles.container} {...chatWrapperProps}>

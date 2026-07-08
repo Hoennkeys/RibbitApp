@@ -3,7 +3,7 @@
 // Location: C:\Ribbit\RibbitApp\src\screens\LifeListScreen.js
 // ─────────────────────────────────────────────────────────────────────────────
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,9 @@ import {
   Platform,
   Image,
   PermissionsAndroid,
+  BackHandler,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { dataService } from '../services/dataService';
 import { theme } from '../utils/theme';
@@ -52,6 +54,31 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
       setLoading(false);
     }
   }, [isGuest, user]);
+
+  // Reseta para o menu principal ao focar a aba Perfil
+  useFocusEffect(
+    useCallback(() => {
+      setCurrentView('menu');
+    }, [])
+  );
+
+  // Intercepta botão voltar do Android para retornar ao menu do perfil
+  useEffect(() => {
+    const backAction = () => {
+      if (currentView !== 'menu') {
+        setCurrentView('menu');
+        return true;
+      }
+      return false;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, [currentView]);
 
   const loadProfileAndData = async () => {
     setLoading(true);

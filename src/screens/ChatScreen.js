@@ -16,6 +16,7 @@ import {
   Platform,
 } from 'react-native';
 import { theme } from '../utils/theme';
+import { useLanguage } from '../utils/i18n';
 
 const MOCK_CHATS = [
   { id: '1', name: 'Dr. Helder', lastMessage: 'Aquela espécie parece ser um Leptodactylus.', time: '14:20', unread: 2 },
@@ -24,6 +25,7 @@ const MOCK_CHATS = [
 ];
 
 export default function ChatScreen() {
+  const { t } = useLanguage();
   const [selectedChat, setSelectedChat] = useState(null);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([
@@ -45,7 +47,7 @@ export default function ChatScreen() {
       >
         <View style={styles.chatHeader}>
           <TouchableOpacity onPress={() => setSelectedChat(null)} style={styles.backButton}>
-            <Text style={styles.backButtonText}>‹ Voltar</Text>
+            <Text style={styles.backButtonText}>{t('back')}</Text>
           </TouchableOpacity>
           <Text style={styles.chatTitle}>{selectedChat.name}</Text>
         </View>
@@ -73,7 +75,8 @@ export default function ChatScreen() {
           </TouchableOpacity>
           <TextInput
             style={styles.messageInput}
-            placeholder="Mensagem..."
+            placeholder={t('message_placeholder')}
+            placeholderTextColor={theme.colors.textSecondary}
             value={message}
             onChangeText={setMessage}
             multiline
@@ -90,7 +93,7 @@ export default function ChatScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Chat</Text>
-        <Text style={styles.subtitle}>Converse com outros pesquisadores</Text>
+        <Text style={styles.subtitle}>{t('chat_subtitle')}</Text>
       </View>
 
       <FlatList

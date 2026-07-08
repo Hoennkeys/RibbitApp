@@ -22,12 +22,14 @@ import {
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { dataService } from '../services/dataService';
 import { theme } from '../utils/theme';
+import { useLanguage } from '../utils/i18n';
 
 export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
+  const { t, locale, changeLanguage } = useLanguage();
   const [profile, setProfile] = useState(null);
   const [observations, setObservations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [currentView, setCurrentView] = useState('menu'); // 'menu', 'collection', 'changePassword', 'changeEmail', 'addPhoto'
+  const [currentView, setCurrentView] = useState('menu'); // 'menu', 'collection', 'changePassword', 'changeEmail', 'addPhoto', 'language'
 
   // States para Alterar Senha
   const [currentPassword, setCurrentPassword] = useState('');
@@ -165,12 +167,10 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
       <View style={styles.container}>
         <View style={styles.guestContainer}>
           <Text style={styles.guestEmoji}>🔒</Text>
-          <Text style={styles.guestTitle}>Área Restrita</Text>
-          <Text style={styles.guestSubtitle}>
-            Faça login para salvar suas observações, ganhar XP e participar da comunidade científica.
-          </Text>
+          <Text style={styles.guestTitle}>{t('restricted_area')}</Text>
+          <Text style={styles.guestSubtitle}>{t('restricted_desc')}</Text>
           <TouchableOpacity style={styles.guestLoginButton} onPress={onLogin}>
-            <Text style={styles.guestLoginButtonText}>Entrar ou Criar Conta</Text>
+            <Text style={styles.guestLoginButtonText}>{t('login_create')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -192,9 +192,9 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
       <View style={styles.container}>
         <View style={styles.subHeader}>
           <TouchableOpacity onPress={() => setCurrentView('menu')} style={styles.backButton}>
-            <Text style={styles.backButtonText}>‹ Voltar</Text>
+            <Text style={styles.backButtonText}>{t('back')}</Text>
           </TouchableOpacity>
-          <Text style={styles.subTitle}>Minha Coleção</Text>
+          <Text style={styles.subTitle}>{t('my_collection')}</Text>
         </View>
         <FlatList
           data={observations}
@@ -225,9 +225,9 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
       <View style={styles.container}>
         <View style={styles.subHeader}>
           <TouchableOpacity onPress={() => setCurrentView('menu')} style={styles.backButton}>
-            <Text style={styles.backButtonText}>‹ Voltar</Text>
+            <Text style={styles.backButtonText}>{t('back')}</Text>
           </TouchableOpacity>
-          <Text style={styles.subTitle}>Foto de Perfil</Text>
+          <Text style={styles.subTitle}>{t('profile_photo')}</Text>
         </View>
         <ScrollView contentContainerStyle={styles.formPadding}>
           <View style={styles.photoPreviewContainer}>
@@ -274,9 +274,9 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
         <View style={styles.subHeader}>
           <TouchableOpacity onPress={() => setCurrentView('menu')} style={styles.backButton}>
-            <Text style={styles.backButtonText}>‹ Voltar</Text>
+            <Text style={styles.backButtonText}>{t('back')}</Text>
           </TouchableOpacity>
-          <Text style={styles.subTitle}>Alterar E-mail</Text>
+          <Text style={styles.subTitle}>{t('change_email')}</Text>
         </View>
         <ScrollView contentContainerStyle={styles.formPadding}>
           <View style={styles.inputGroup}>
@@ -304,9 +304,9 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
         <View style={styles.subHeader}>
           <TouchableOpacity onPress={() => setCurrentView('menu')} style={styles.backButton}>
-            <Text style={styles.backButtonText}>‹ Voltar</Text>
+            <Text style={styles.backButtonText}>{t('back')}</Text>
           </TouchableOpacity>
-          <Text style={styles.subTitle}>Alterar Senha</Text>
+          <Text style={styles.subTitle}>{t('change_password')}</Text>
         </View>
         <ScrollView contentContainerStyle={styles.formPadding}>
           <View style={styles.groupContainer}>
@@ -345,6 +345,45 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
     );
   }
 
+  if (currentView === 'language') {
+    const LANGUAGES = [
+      { code: 'pt', label: 'Português' },
+      { code: 'en', label: 'English' },
+      { code: 'es', label: 'Español' },
+      { code: 'fr', label: 'Français' },
+      { code: 'it', label: 'Italiano' },
+      { code: 'zh', label: '简体中文' },
+      { code: 'ko', label: '한국어' }
+    ];
+
+    return (
+      <View style={styles.container}>
+        <View style={styles.subHeader}>
+          <TouchableOpacity onPress={() => setCurrentView('menu')} style={styles.backButton}>
+            <Text style={styles.backButtonText}>{t('back')}</Text>
+          </TouchableOpacity>
+          <Text style={styles.subTitle}>{t('change_language_title')}</Text>
+        </View>
+        <ScrollView contentContainerStyle={styles.formPadding}>
+          <View style={styles.groupContainer}>
+            {LANGUAGES.map((lang, index) => (
+              <View key={lang.code}>
+                <TouchableOpacity
+                  style={styles.languageItem}
+                  onPress={() => changeLanguage(lang.code)}
+                >
+                  <Text style={styles.languageLabel}>{lang.label}</Text>
+                  {locale === lang.code && <Text style={styles.checkmark}>✓</Text>}
+                </TouchableOpacity>
+                {index < LANGUAGES.length - 1 && <View style={styles.separator} />}
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
   // --- MAIN MENU VIEW ---
 
   return (
@@ -361,18 +400,18 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
             )}
           </View>
           <View style={styles.profileDetails}>
-            <Text style={styles.profileName}>{profile?.full_name || 'Usuário'}</Text>
-            <Text style={styles.profileLevel}>🏆 {profile?.nivel || 'Iniciante'}</Text>
-            <Text style={styles.xpText}>{profile?.xp || 0} XP acumulados</Text>
+            <Text style={styles.profileName}>{profile?.full_name || t('tab_profile')}</Text>
+            <Text style={styles.profileLevel}>🏆 {profile?.nivel === 'Iniciante' ? t('beginner') : profile?.nivel || t('beginner')}</Text>
+            <Text style={styles.xpText}>{profile?.xp || 0} {t('xp_accumulated')}</Text>
           </View>
           <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
-             <Text style={styles.logoutButtonText}>Sair</Text>
+             <Text style={styles.logoutButtonText}>{t('logout')}</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.menuContainer}>
-        <Text style={styles.sectionLabel}>ATIVIDADE</Text>
+        <Text style={styles.sectionLabel}>{t('activity_section')}</Text>
         <View style={styles.groupContainer}>
           <TouchableOpacity style={styles.menuItem} onPress={() => setCurrentView('collection')}>
             <Image
@@ -380,45 +419,51 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
               style={styles.menuIconImage}
               resizeMode="contain"
             />
-            <Text style={styles.menuText}>Minha Coleção ({observations.length})</Text>
+            <Text style={styles.menuText}>{t('my_collection')} ({observations.length})</Text>
             <Text style={styles.menuArrow}>›</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.sectionLabel}>PERFIL</Text>
+        <Text style={styles.sectionLabel}>{t('profile_section')}</Text>
         <View style={styles.groupContainer}>
-          <TouchableOpacity style={styles.menuItem} onPress={() => Alert.alert('Em breve', 'Funcionalidade Bio em desenvolvimento.')}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => Alert.alert(t('coming_soon'), t('bio_dev'))}>
             <Text style={styles.menuIcon}>📝</Text>
-            <Text style={styles.menuText}>Bio</Text>
+            <Text style={styles.menuText}>{t('bio')}</Text>
             <Text style={styles.menuArrow}>›</Text>
           </TouchableOpacity>
           <View style={styles.separator} />
-          <TouchableOpacity style={styles.menuItem} onPress={() => Alert.alert('Em breve', 'Informações Acadêmicas em desenvolvimento.')}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => Alert.alert(t('coming_soon'), 'Informações Acadêmicas em desenvolvimento.')}>
             <Text style={styles.menuIcon}>🎓</Text>
-            <Text style={styles.menuText}>Informações Acadêmicas</Text>
+            <Text style={styles.menuText}>{t('academic_info')}</Text>
             <Text style={styles.menuArrow}>›</Text>
           </TouchableOpacity>
           <View style={styles.separator} />
           <TouchableOpacity style={styles.menuItem} onPress={() => setCurrentView('addPhoto')}>
             <Text style={styles.menuIcon}>📷</Text>
-            <Text style={styles.menuText}>Foto de Perfil</Text>
+            <Text style={styles.menuText}>{t('profile_photo')}</Text>
             <Text style={styles.menuArrow}>›</Text>
           </TouchableOpacity>
           <View style={styles.separator} />
           <TouchableOpacity style={styles.menuItem} onPress={() => setCurrentView('changeEmail')}>
             <Text style={styles.menuIcon}>📧</Text>
-            <Text style={styles.menuText}>Alterar E-mail</Text>
+            <Text style={styles.menuText}>{t('change_email')}</Text>
             <Text style={styles.menuArrow}>›</Text>
           </TouchableOpacity>
           <View style={styles.separator} />
           <TouchableOpacity style={styles.menuItem} onPress={() => setCurrentView('changePassword')}>
             <Text style={styles.menuIcon}>🔑</Text>
-            <Text style={styles.menuText}>Alterar Senha</Text>
+            <Text style={styles.menuText}>{t('change_password')}</Text>
+            <Text style={styles.menuArrow}>›</Text>
+          </TouchableOpacity>
+          <View style={styles.separator} />
+          <TouchableOpacity style={styles.menuItem} onPress={() => setCurrentView('language')}>
+            <Text style={styles.menuIcon}>🌐</Text>
+            <Text style={styles.menuText}>{t('language_option')}</Text>
             <Text style={styles.menuArrow}>›</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.sectionLabel}>CONECTAR</Text>
+        <Text style={styles.sectionLabel}>{t('connect_section')}</Text>
         <View style={styles.groupContainer}>
           <TouchableOpacity style={styles.menuItem} onPress={() => {}}>
             <Text style={styles.menuIcon}>🔗</Text>
@@ -492,4 +537,7 @@ const styles = StyleSheet.create({
   optionsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 },
   optionMiniCard: { flex: 1, backgroundColor: theme.colors.surface, padding: 16, borderRadius: 14, alignItems: 'center', marginHorizontal: 6, ...theme.shadows.soft },
   miniCardText: { color: theme.colors.textPrimary, fontSize: 13, marginTop: 8, fontWeight: '600' },
+  languageItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 },
+  languageLabel: { color: theme.colors.textPrimary, fontSize: 17, fontWeight: '500' },
+  checkmark: { color: theme.colors.primary, fontSize: 18, fontWeight: '700' },
 });

@@ -93,6 +93,9 @@ export default function ChatScreen({ navigation, route }) {
   const [selectedViewerImage, setSelectedViewerImage] = useState(null);
   const [showViewerMenu, setShowViewerMenu] = useState(false);
 
+  // Voice message playback speed state (1.0x, 1.25x, 1.50x, 2.0x)
+  const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
+
   // Close emoji picker automatically if native keyboard opens
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
@@ -491,6 +494,9 @@ export default function ChatScreen({ navigation, route }) {
         setPlayTime('00:00');
         
         await audioRecorderPlayer.startPlayer(audioUrl);
+        // Set the active playback speed immediately on start
+        await audioRecorderPlayer.setPlaybackSpeed(playbackSpeed);
+        
         audioRecorderPlayer.addPlayBackListener((e) => {
           // Tempo atual
           const playSec = Math.floor(e.currentPosition / 1000);
@@ -514,6 +520,24 @@ export default function ChatScreen({ navigation, route }) {
     } catch (err) {
       console.error('Erro ao reproduzir áudio:', err);
       setPlayingAudioUrl(null);
+    }
+  };
+
+  // Cycle playback speed (1x -> 1.25x -> 1.5x -> 2x -> 1x)
+  const handleCycleSpeed = async () => {
+    let newSpeed = 1.0;
+    if (playbackSpeed === 1.0) newSpeed = 1.25;
+    else if (playbackSpeed === 1.25) newSpeed = 1.5;
+    else if (playbackSpeed === 1.5) newSpeed = 2.0;
+    else newSpeed = 1.0;
+
+    setPlaybackSpeed(newSpeed);
+    if (playingAudioUrl) {
+      try {
+        await audioRecorderPlayer.setPlaybackSpeed(newSpeed);
+      } catch (err) {
+        console.error('Falha ao definir velocidade de reprodução:', err);
+      }
     }
   };
 
@@ -770,7 +794,7 @@ export default function ChatScreen({ navigation, route }) {
                     <Image source={{ uri: imageUrl }} style={{ width: 220, height: 160, borderRadius: 10 }} resizeMode="cover" />
                   </TouchableOpacity>
                 ) : isAudio ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', minWidth: 150, paddingVertical: 4 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', minWidth: 180, paddingVertical: 4 }}>
                     <TouchableOpacity
                       onPress={() => togglePlayAudio(audioUrl)}
                       style={{
@@ -797,6 +821,26 @@ export default function ChatScreen({ navigation, route }) {
                         </Text>
                       )}
                     </View>
+                    
+                    {/* Playback speed chip buttons (WhatsApp style) */}
+                    {playingAudioUrl === audioUrl && (
+                      <TouchableOpacity
+                        onPress={handleCycleSpeed}
+                        style={{
+                          marginLeft: 8,
+                          paddingHorizontal: 8,
+                          paddingVertical: 4,
+                          borderRadius: 12,
+                          backgroundColor: isMe ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.08)',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Text style={{ fontSize: 11, fontWeight: '800', color: isMe ? '#FFFFFF' : theme.colors.textPrimary }}>
+                          {playbackSpeed}x
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 ) : (
                   <Text

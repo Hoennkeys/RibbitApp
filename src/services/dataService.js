@@ -53,6 +53,16 @@ export const dataService = {
   },
 
   addObservation: async (especieId, localizacao, userId, sugestao = null, audioUrl = null) => {
+    // Diagnostic logs
+    const sessionRes = await supabase.auth.getSession();
+    const userRes = await supabase.auth.getUser();
+    console.log("--- Diagnostic Log ---");
+    console.log("userId passed:", userId);
+    console.log("Session user ID:", sessionRes?.data?.session?.user?.id);
+    console.log("User API ID:", userRes?.data?.user?.id);
+    console.log("Session token exists:", !!sessionRes?.data?.session?.access_token);
+    console.log("-----------------------");
+
     // Fetch profile bio metadata
     const { data: profile } = await supabase
       .from('profiles')

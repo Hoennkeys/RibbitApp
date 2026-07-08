@@ -320,6 +320,63 @@ export const dataService = {
     return result.publicUrl;
   },
 
+  uploadChatFile: async (userId, localUri, contentType, base64 = null) => {
+    try {
+      const fileExt = localUri.split('.').pop() || 'jpg';
+      const fileName = `chat-media-${userId}-${Date.now()}.${fileExt}`;
+      
+      let uploadBody;
+      if (base64) {
+        // Envio ultra-estável via ArrayBuffer para imagens e arquivos com base64
+        uploadBody = decode(base64);
+      } else {
+        // Para áudios (onde não temos base64 direto), lemos o arquivo local como Blob,
+        // convertemos para Base64 usando o FileReader nativo do React Native e decodificamos
+        // para ArrayBuffer. Isso evita enviar Blobs na ponte de rede externa do Android,
+        // o que causa o bug crônico 'Network request failed'.
+        let uploadUri = localUri;
+        if (Platform.OS === 'android' && !uploadUri.startsWith('file://') && !uploadUri.startsWith('content://') && !uploadUri.startsWith('http')) {
+          uploadUri = `file://${uploadUri}`;
+        }
+        
+        const response = await fetch(uploadUri);
+        const blob = await response.blob();
+        
+        // Conversão estável de Blob para Base64 em JS
+        const reader = new FileReader();
+        const base64Data = await new Promise((resolve, reject) => {
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+        
+        const base64Pure = base64Data.split(',')[1];
+        uploadBody = decode(base64Pure);
+      }
+
+      const { data, error } = await supabase.storage
+        .from('avatars') // Reutiliza o bucket público 'avatars'
+        .upload(fileName, uploadBody, {
+          contentType: contentType || 'application/octet-stream',
+          upsert: true
+        });
+
+      if (error) {
+        console.error('Erro no upload de arquivo do chat:', error);
+        throw error;
+      }
+
+      const { data: result } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      return result.publicUrl;
+    } catch (e) {
+      console.error('Falha ao processar upload local:', e);
+      throw e;
+    }
+  },
+
   verifyCurrentPassword: async (email, password) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,

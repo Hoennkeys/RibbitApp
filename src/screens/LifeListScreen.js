@@ -28,6 +28,13 @@ import { dataService } from '../services/dataService';
 import { theme } from '../utils/theme';
 import { useLanguage } from '../utils/i18n';
 
+const sanitizeLevel = (level) => {
+  if (!level) return 'Bronze';
+  let sanitized = level.replace(/Coaxador de\s+/i, '').replace(/Coaxador\s+/i, '');
+  sanitized = sanitized.charAt(0).toUpperCase() + sanitized.slice(1);
+  return sanitized;
+};
+
 const getAttribution = (user, profile) => {
   if (!user) return 'Explorer';
   const email = (user.email || '').toLowerCase();
@@ -1033,14 +1040,11 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
             <View style={styles.profileDetails}>
               <Text style={styles.profileName}>{profile?.full_name || t('tab_profile')}</Text>
               <Text style={styles.profileLevel}>
-                🏆 {profile?.nivel || 'Bronze'} • {getAttribution(user, profile)}
+                🏆 {sanitizeLevel(profile?.nivel)} • {getAttribution(user, profile)}
               </Text>
               <ProgressBar xp={profile?.xp || 0} />
               <Text style={styles.xpText}>{profile?.xp || 0} {t('xp_accumulated')}</Text>
             </View>
-            <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
-               <Text style={styles.logoutButtonText}>{t('logout')}</Text>
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -1093,6 +1097,12 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
           <TouchableOpacity style={styles.menuItem} onPress={() => setCurrentView('language')}>
             <Text style={styles.menuIcon}>🌐</Text>
             <Text style={styles.menuText}>{t('language_option')}</Text>
+            <Text style={styles.menuArrow}>›</Text>
+          </TouchableOpacity>
+          <View style={styles.separator} />
+          <TouchableOpacity style={styles.menuItem} onPress={onLogout}>
+            <Text style={[styles.menuIcon, { color: '#FF3B30' }]}>🚪</Text>
+            <Text style={[styles.menuText, { color: '#FF3B30', fontWeight: '600' }]}>{t('logout')}</Text>
             <Text style={styles.menuArrow}>›</Text>
           </TouchableOpacity>
         </View>
@@ -1157,7 +1167,7 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
               <View style={styles.cardDetailRow}>
                 <Text style={styles.cardDetailLabel}>🏆 {t('level_label')}</Text>
                 <Text style={styles.cardDetailValue}>
-                  {profile?.nivel || 'Bronze'} • {getAttribution(user, profile)}
+                  {sanitizeLevel(profile?.nivel)} • {getAttribution(user, profile)}
                 </Text>
               </View>
 
@@ -1228,7 +1238,7 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
               {t('level_up_title')}
             </Text>
             <Text style={[styles.cardDetailValue, { fontSize: 16, marginTop: 12, textAlign: 'center', color: theme.colors.textPrimary }]}>
-              {t('level_up_desc').replace('{level}', levelUpName)}
+              {t('level_up_desc').replace('{level}', sanitizeLevel(levelUpName))}
             </Text>
             
             <TouchableOpacity

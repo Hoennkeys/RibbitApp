@@ -85,6 +85,7 @@ export const dataService = {
           especie_id: especieId,
           usuario_id: userId,
           localizacao: localizacao,
+          status_revisao: 'pendente',
           sugestao: sugestao,
           audio_url: audioUrl,
         }

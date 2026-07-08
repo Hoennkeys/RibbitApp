@@ -58,11 +58,11 @@ export default function ChatScreen({ navigation, route }) {
   // Dynamically hide/show the parent tab navigator bottom bar
   useEffect(() => {
     if (selectedChat) {
-      navigation.getParent()?.setOptions({
+      navigation.setOptions({
         tabBarStyle: { display: 'none' }
       });
     } else {
-      navigation.getParent()?.setOptions({
+      navigation.setOptions({
         tabBarStyle: {
           backgroundColor: 'rgb(15, 23, 42)',
           borderTopWidth: 1,
@@ -643,13 +643,12 @@ export default function ChatScreen({ navigation, route }) {
   // DETAILED CHAT SCREEN
   const activePartner = getPartnerInfo(selectedChat);
 
-  // On Android, windowSoftInputMode="adjustResize" in AndroidManifest handles
-  // keyboard layout natively — using KeyboardAvoidingView causes double-shift.
-  // On iOS there is no such system behaviour, so padding is needed.
-  const ChatWrapper = Platform.OS === 'ios' ? KeyboardAvoidingView : View;
+  // Use KeyboardAvoidingView with behavior 'padding' on iOS and 'height' on Android
+  // to avoid keyboard overlays and double offsets when the Bottom Tab Bar is hidden.
+  const ChatWrapper = KeyboardAvoidingView;
   const chatWrapperProps = Platform.OS === 'ios'
     ? { behavior: 'padding', keyboardVerticalOffset: 90 }
-    : {};
+    : { behavior: 'height', keyboardVerticalOffset: 0 };
 
   return (
     <ChatWrapper style={styles.container} {...chatWrapperProps}>

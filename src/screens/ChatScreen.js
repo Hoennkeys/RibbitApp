@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 24, alignItems: 'center' },
   title: { fontSize: 34, fontWeight: '800', color: theme.colors.textPrimary, textAlign: 'center' },
   subtitle: { fontSize: 16, color: theme.colors.textSecondary, marginTop: 8, textAlign: 'center' },
-  listContent: { paddingHorizontal: 20, paddingBottom: 120 },
+  listContent: { paddingHorizontal: 20, paddingBottom: 30 },
   chatItem: { flexDirection: 'row', padding: 16, backgroundColor: theme.colors.surface, borderRadius: 16, marginBottom: 12, ...theme.shadows.soft, alignItems: 'center' },
   avatarPlaceholder: { width: 50, height: 50, borderRadius: 25, backgroundColor: 'rgba(52, 199, 89, 0.1)', justifyContent: 'center', alignItems: 'center', marginRight: 14, overflow: 'hidden' },
   avatarPlaceholderSmall: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(52, 199, 89, 0.1)', justifyContent: 'center', alignItems: 'center', marginRight: 10, overflow: 'hidden' },
@@ -526,7 +526,7 @@ const styles = StyleSheet.create({
   messageInput: { flex: 1, backgroundColor: theme.colors.background, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, marginHorizontal: 8, color: theme.colors.textPrimary, fontSize: 16, maxHeight: 100 },
   sendButton: { padding: 8 },
   sendIcon: { fontSize: 24 },
-  fabNewChat: { position: 'absolute', bottom: 120, right: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: theme.colors.accent, justifyContent: 'center', alignItems: 'center', ...theme.shadows.medium },
+  fabNewChat: { position: 'absolute', bottom: 24, right: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: theme.colors.accent, justifyContent: 'center', alignItems: 'center', ...theme.shadows.medium },
   fabIcon: { color: '#FFFFFF', fontSize: 30, fontWeight: '300' },
   emptyText: { color: theme.colors.textSecondary, textAlign: 'center', marginTop: 40, fontSize: 16 },
   

@@ -1541,7 +1541,7 @@ const styles = StyleSheet.create({
   backButton: { marginRight: 16 },
   backButtonText: { color: theme.colors.accent, fontSize: 17, fontWeight: '500' },
   subTitle: { color: theme.colors.textPrimary, fontSize: 20, fontWeight: '700' },
-  listContent: { padding: 20, paddingBottom: 120 },
+  listContent: { padding: 20, paddingBottom: 30 },
   obsCard: { backgroundColor: theme.colors.surface, borderRadius: 16, padding: 16, marginBottom: 12, ...theme.shadows.soft },
   obsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   obsPopular: { color: theme.colors.textPrimary, fontSize: 17, fontWeight: '700' },

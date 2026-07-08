@@ -21,7 +21,7 @@ import {
 import { theme } from '../utils/theme';
 import { useLanguage } from '../utils/i18n';
 import supabase from '../services/supabaseClient';
-import dataService from '../services/dataService';
+import { dataService } from '../services/dataService';
 
 const formatTime = (isoString) => {
   if (!isoString) return '';

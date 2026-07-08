@@ -19,6 +19,7 @@ import DashboardScreen from './src/screens/DashboardScreen';
 import ChatScreen from './src/screens/ChatScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import SignUpScreen from './src/screens/SignUpScreen';
+import LibraryScreen from './src/screens/LibraryScreen';
 import { LanguageProvider, useLanguage } from './src/utils/i18n';
 
 const Tab = createBottomTabNavigator();
@@ -111,6 +112,7 @@ function AppContent() {
                 if (route.name === 'Dashboard') icon = '📊';
                 else if (route.name === 'SoundID') icon = '🎙️';
                 else if (route.name === 'Chat') icon = '💬';
+                else if (route.name === 'Biblioteca') icon = '📚';
                 else if (route.name === 'Explorar') icon = '🔍';
                 else if (route.name === 'Assistente') icon = '🧙';
 
@@ -138,6 +140,13 @@ function AppContent() {
               component={ChatScreen}
               options={{
                 tabBarLabel: t('tab_chat'),
+              }}
+            />
+            <Tab.Screen
+              name="Biblioteca"
+              component={LibraryScreen}
+              options={{
+                tabBarLabel: t('tab_library') || 'Biblioteca',
               }}
             />
             <Tab.Screen

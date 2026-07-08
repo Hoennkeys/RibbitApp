@@ -9,6 +9,7 @@ const translations = {
     tab_explore: 'Explorar',
     tab_wizard: 'Assistente',
     tab_profile: 'Perfil',
+    tab_library: 'Biblioteca',
 
     // Login screen
     tagline: 'Identificação Científica de Anfíbios',
@@ -176,6 +177,7 @@ const translations = {
     tab_explore: 'Explore',
     tab_wizard: 'Wizard',
     tab_profile: 'Profile',
+    tab_library: 'Library',
 
     // Login screen
     tagline: 'Scientific Amphibian Identification',
@@ -343,6 +345,7 @@ const translations = {
     tab_explore: 'Explorar',
     tab_wizard: 'Asistente',
     tab_profile: 'Perfil',
+    tab_library: 'Biblioteca',
 
     // Login screen
     tagline: 'Identificación Científica de Anfibios',
@@ -510,6 +513,7 @@ const translations = {
     tab_explore: 'Explorer',
     tab_wizard: 'Assistant',
     tab_profile: 'Profil',
+    tab_library: 'Bibliothèque',
 
     // Login screen
     tagline: 'Identification scientifique des amphibiens',
@@ -677,6 +681,7 @@ const translations = {
     tab_explore: 'Esplora',
     tab_wizard: 'Assistente',
     tab_profile: 'Profilo',
+    tab_library: 'Biblioteca',
 
     // Login screen
     tagline: 'Identificazione scientifica degli anfibi',

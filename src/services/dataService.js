@@ -127,6 +127,19 @@ export const dataService = {
     };
   },
 
+  getAllObservations: async () => {
+    const { data, error } = await supabase
+      .from('observations')
+      .select('*, species(*), profiles:usuario_id(full_name, avatar_url)')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Erro ao buscar todas as observações:', error);
+      throw error;
+    }
+    return data;
+  },
+
   // --- COMENTÁRIOS ---
   getComments: async (speciesId) => {
     const { data, error } = await supabase

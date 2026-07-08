@@ -280,7 +280,23 @@ export default function ChatScreen({ navigation, route }) {
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={() => (
-              <Text style={styles.emptyText}>Nenhuma conversa iniciada.</Text>
+              <View style={{ alignItems: 'center', marginTop: 40 }}>
+                <Text style={styles.emptyText}>Nenhuma conversa iniciada.</Text>
+                <TouchableOpacity
+                  style={{
+                    marginTop: 16,
+                    paddingVertical: 12,
+                    paddingHorizontal: 24,
+                    backgroundColor: theme.colors.primary,
+                    borderRadius: 20,
+                  }}
+                  onPress={openNewChatModal}
+                >
+                  <Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 }}>
+                    💬 {t('start_chat')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             )}
             renderItem={({ item }) => {
               const partner = getPartnerInfo(item);

@@ -1439,28 +1439,46 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout, navig
                 </Text>
               )}
               renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: theme.colors.background }}
-                  onPress={() => {
-                    setShowFollowersModal(false);
-                    handleOpenPartnerProfile(item.id);
-                  }}
-                >
-                  <View style={[styles.avatarCircle, { width: 40, height: 40, borderRadius: 20, marginRight: 12, overflow: 'hidden' }]}>
-                    {item.avatar_url ? (
-                      <Image source={{ uri: item.avatar_url }} style={styles.avatarImage} />
-                    ) : (
-                      <Text style={[styles.avatarLetter, { fontSize: 16 }]}>
-                        {item.full_name ? item.full_name[0].toUpperCase() : 'U'}
-                      </Text>
-                    )}
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: theme.colors.textPrimary, fontSize: 16, fontWeight: '600' }}>{item.full_name}</Text>
-                    <Text style={{ color: theme.colors.primary, fontSize: 12 }}>🏆 {sanitizeLevel(item.nivel)}</Text>
-                  </View>
-                  <Text style={{ color: theme.colors.border, fontSize: 18 }}>›</Text>
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: theme.colors.background }}>
+                  <TouchableOpacity
+                    style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}
+                    onPress={() => {
+                      setShowFollowersModal(false);
+                      handleOpenPartnerProfile(item.id);
+                    }}
+                  >
+                    <View style={[styles.avatarCircle, { width: 40, height: 40, borderRadius: 20, marginRight: 12, overflow: 'hidden' }]}>
+                      {item.avatar_url ? (
+                        <Image source={{ uri: item.avatar_url }} style={styles.avatarImage} />
+                      ) : (
+                        <Text style={[styles.avatarLetter, { fontSize: 16 }]}>
+                          {item.full_name ? item.full_name[0].toUpperCase() : 'U'}
+                        </Text>
+                      )}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: theme.colors.textPrimary, fontSize: 16, fontWeight: '600' }}>{item.full_name}</Text>
+                      <Text style={{ color: theme.colors.primary, fontSize: 12 }}>🏆 {sanitizeLevel(item.nivel)}</Text>
+                    </View>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={{ padding: 8, paddingHorizontal: 12, backgroundColor: 'rgba(52, 199, 89, 0.1)', borderRadius: 12 }}
+                    onPress={async () => {
+                      setShowFollowersModal(false);
+                      try {
+                        const chat = await dataService.getOrCreateChat(user.id, item.id);
+                        navigation.navigate('Chat', { selectedChatId: chat.id });
+                      } catch (e) {
+                        Alert.alert('Erro', 'Não foi possível iniciar o chat.');
+                      }
+                    }}
+                  >
+                    <Text style={{ color: theme.colors.primary, fontSize: 13, fontWeight: '600' }}>
+                      💬 {t('start_chat')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               )}
             />
           </View>

@@ -148,6 +148,11 @@ export default function ChatScreen({ navigation, route }) {
   useEffect(() => {
     if (currentUser) {
       loadChats();
+
+      // Backup Polling: Sync conversation cards list every 5 seconds
+      const chatsPolling = setInterval(() => {
+        loadChats();
+      }, 5000);
       
       // Subscribe to chats changes to update the conversation list in real-time
       const chatsChannel = supabase
@@ -174,6 +179,7 @@ export default function ChatScreen({ navigation, route }) {
         .subscribe();
 
       return () => {
+        clearInterval(chatsPolling);
         chatsChannel.unsubscribe();
         messagesChannel.unsubscribe();
       };
@@ -212,22 +218,39 @@ export default function ChatScreen({ navigation, route }) {
   useEffect(() => {
     if (!selectedChat || !currentUser) return;
 
+    let isFirstLoad = true;
+
     const fetchMessages = async () => {
-      setLoadingMessages(true);
+      if (isFirstLoad) {
+        setLoadingMessages(true);
+      }
       try {
         const msgs = await dataService.getMessages(selectedChat.id);
-        setMessages(msgs || []);
+        
+        // Only trigger state update if messages data is different
+        setMessages((prev) => {
+          if (JSON.stringify(prev) === JSON.stringify(msgs)) return prev;
+          return msgs || [];
+        });
         
         // Mark messages from other user as delivered
         await dataService.markMessagesAsDelivered(selectedChat.id, currentUser.id);
       } catch (error) {
         console.error('Error fetching messages:', error);
       } finally {
-        setLoadingMessages(false);
+        if (isFirstLoad) {
+          setLoadingMessages(false);
+          isFirstLoad = false;
+        }
       }
     };
 
     fetchMessages();
+
+    // Backup Polling: Sync active messages every 3 seconds
+    const pollingInterval = setInterval(() => {
+      fetchMessages();
+    }, 3000);
 
     // Subscribe to messages changes in this chat
     const messagesChannel = supabase
@@ -268,6 +291,7 @@ export default function ChatScreen({ navigation, route }) {
       .subscribe();
 
     return () => {
+      clearInterval(pollingInterval);
       messagesChannel.unsubscribe();
     };
   }, [selectedChat, currentUser]);

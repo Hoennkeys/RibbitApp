@@ -320,6 +320,38 @@ export const dataService = {
     return result.publicUrl;
   },
 
+  uploadChatFile: async (userId, localUri, contentType) => {
+    try {
+      const fileExt = localUri.split('.').pop() || 'mp4';
+      const fileName = `chat-media-${userId}-${Date.now()}.${fileExt}`;
+      
+      // Lê a URI local como Blob usando a API fetch nativa do React Native
+      const response = await fetch(localUri);
+      const blob = await response.blob();
+
+      const { data, error } = await supabase.storage
+        .from('avatars') // Reutiliza o bucket público 'avatars'
+        .upload(fileName, blob, {
+          contentType: contentType || 'application/octet-stream',
+          upsert: true
+        });
+
+      if (error) {
+        console.error('Erro no upload de arquivo do chat:', error);
+        throw error;
+      }
+
+      const { data: result } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      return result.publicUrl;
+    } catch (e) {
+      console.error('Falha ao processar upload local:', e);
+      throw e;
+    }
+  },
+
   verifyCurrentPassword: async (email, password) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,

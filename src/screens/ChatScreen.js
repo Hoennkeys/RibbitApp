@@ -20,10 +20,13 @@ import {
   BackHandler,
 } from 'react-native';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 import { theme } from '../utils/theme';
 import { useLanguage } from '../utils/i18n';
 import supabase from '../services/supabaseClient';
 import { dataService } from '../services/dataService';
+
+const audioRecorderPlayer = new AudioRecorderPlayer();
 
 const formatTime = (isoString) => {
   if (!isoString) return '';
@@ -44,6 +47,33 @@ export default function ChatScreen({ navigation, route }) {
   const [messages, setMessages] = useState([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [messageText, setMessageText] = useState('');
+
+  // Audio Recording & Playing States
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordTime, setRecordTime] = useState('00:00');
+  const [playingAudioUrl, setPlayingAudioUrl] = useState(null);
+  const [playTime, setPlayTime] = useState('00:00');
+  const [playDuration, setPlayDuration] = useState('00:00');
+
+  // Dynamically hide/show the parent tab navigator bottom bar
+  useEffect(() => {
+    if (selectedChat) {
+      navigation.getParent()?.setOptions({
+        tabBarStyle: { display: 'none' }
+      });
+    } else {
+      navigation.getParent()?.setOptions({
+        tabBarStyle: {
+          backgroundColor: 'rgb(15, 23, 42)',
+          borderTopWidth: 1,
+          borderTopColor: 'rgba(249, 250, 251, 0.08)',
+          height: Platform.OS === 'ios' ? 88 : 65,
+          paddingBottom: Platform.OS === 'ios' ? 30 : 10,
+          paddingTop: 10,
+        }
+      });
+    }
+  }, [selectedChat, navigation]);
   
   // New Chat Modal states
   const [showNewChatModal, setShowNewChatModal] = useState(false);
@@ -269,13 +299,46 @@ export default function ChatScreen({ navigation, route }) {
     }
   };
 
+  // Clean up audio recorder and player on unmount
+  useEffect(() => {
+    return () => {
+      audioRecorderPlayer.stopRecorder().catch(() => {});
+      audioRecorderPlayer.removeRecordBackListener();
+      audioRecorderPlayer.stopPlayer().catch(() => {});
+      audioRecorderPlayer.removePlayBackListener();
+    };
+  }, []);
+
+  // Image Helper: Upload and send image message
+  const handleUploadAndSendImage = async (uri, mimeType) => {
+    if (!selectedChat || !currentUser) return;
+    try {
+      setLoadingMessages(true);
+      const publicUrl = await dataService.uploadChatFile(currentUser.id, uri, mimeType || 'image/jpeg');
+      const textToSend = `[image]:${publicUrl}`;
+      const sentMsg = await dataService.sendMessage(selectedChat.id, currentUser.id, textToSend);
+      if (sentMsg) {
+        setMessages((prev) => [...prev, sentMsg]);
+      }
+    } catch (error) {
+      console.error('Image send error:', error);
+      Alert.alert('Erro', 'Não foi possível enviar a imagem.');
+    } finally {
+      setLoadingMessages(false);
+      setTimeout(() => {
+        messagesListRef.current?.scrollToEnd({ animated: true });
+      }, 200);
+    }
+  };
+
   // Attachment: open image gallery
   const handleAttachment = () => {
     launchImageLibrary(
-      { mediaType: 'mixed', quality: 0.8 },
+      { mediaType: 'photo', quality: 0.8 },
       (response) => {
-        if (response.didCancel || response.errorCode) return;
-        Alert.alert('Em breve', 'Envio de arquivos estará disponível em próxima atualização.');
+        if (response.didCancel || response.errorCode || !response.assets?.[0]) return;
+        const asset = response.assets[0];
+        handleUploadAndSendImage(asset.uri, asset.type);
       }
     );
   };
@@ -285,15 +348,105 @@ export default function ChatScreen({ navigation, route }) {
     launchCamera(
       { mediaType: 'photo', quality: 0.8, saveToPhotos: false },
       (response) => {
-        if (response.didCancel || response.errorCode) return;
-        Alert.alert('Em breve', 'Envio de fotos estará disponível em próxima atualização.');
+        if (response.didCancel || response.errorCode || !response.assets?.[0]) return;
+        const asset = response.assets[0];
+        handleUploadAndSendImage(asset.uri, asset.type);
       }
     );
   };
 
-  // Mic: placeholder for future voice messages
-  const handleMic = () => {
-    Alert.alert('Em breve', 'Mensagens de áudio estarão disponíveis em próxima atualização.');
+  // Start Audio Recording
+  const startAudioRecording = async () => {
+    try {
+      setIsRecording(true);
+      setRecordTime('00:00');
+      
+      const uri = await audioRecorderPlayer.startRecorder(undefined); // Automatic temp filename
+      audioRecorderPlayer.addRecordBackListener((e) => {
+        const seconds = Math.floor(e.currentPosition / 1000);
+        const mm = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const ss = Math.floor(seconds % 60).toString().padStart(2, '0');
+        setRecordTime(`${mm}:${ss}`);
+      });
+      console.log('Gravando áudio em:', uri);
+    } catch (err) {
+      console.error('Erro ao iniciar gravação:', err);
+      setIsRecording(false);
+      Alert.alert('Erro', 'Não foi possível acessar o microfone.');
+    }
+  };
+
+  // Stop & Upload/Cancel Audio Recording
+  const stopAudioRecording = async (shouldSend) => {
+    try {
+      const uri = await audioRecorderPlayer.stopRecorder();
+      audioRecorderPlayer.removeRecordBackListener();
+      setIsRecording(false);
+      
+      if (!shouldSend || !uri) {
+        console.log('Gravação cancelada.');
+        return;
+      }
+
+      setLoadingMessages(true);
+      // Upload do arquivo m4a/mp4 de áudio
+      const publicUrl = await dataService.uploadChatFile(currentUser.id, uri, 'audio/mp4');
+      const textToSend = `[audio]:${publicUrl}`;
+      const sentMsg = await dataService.sendMessage(selectedChat.id, currentUser.id, textToSend);
+      if (sentMsg) {
+        setMessages((prev) => [...prev, sentMsg]);
+      }
+    } catch (err) {
+      console.error('Erro ao salvar gravação:', err);
+      Alert.alert('Erro', 'Falha ao processar arquivo de áudio.');
+    } finally {
+      setLoadingMessages(false);
+      setTimeout(() => {
+        messagesListRef.current?.scrollToEnd({ animated: true });
+      }, 200);
+    }
+  };
+
+  // Play / Pause Audio messages in bubbles
+  const togglePlayAudio = async (audioUrl) => {
+    try {
+      if (playingAudioUrl === audioUrl) {
+        // Pausar/Parar se for o mesmo áudio
+        await audioRecorderPlayer.stopPlayer();
+        setPlayingAudioUrl(null);
+      } else {
+        // Parar se algum outro áudio estiver tocando
+        if (playingAudioUrl) {
+          await audioRecorderPlayer.stopPlayer();
+        }
+        setPlayingAudioUrl(audioUrl);
+        setPlayTime('00:00');
+        
+        await audioRecorderPlayer.startPlayer(audioUrl);
+        audioRecorderPlayer.addPlayBackListener((e) => {
+          // Tempo atual
+          const playSec = Math.floor(e.currentPosition / 1000);
+          const mmPlay = Math.floor(playSec / 60).toString().padStart(2, '0');
+          const ssPlay = Math.floor(playSec % 60).toString().padStart(2, '0');
+          setPlayTime(`${mmPlay}:${ssPlay}`);
+
+          // Duração
+          const durSec = Math.floor(e.duration / 1000);
+          const mmDur = Math.max(0, Math.floor(durSec / 60)).toString().padStart(2, '0');
+          const ssDur = Math.max(0, Math.floor(durSec % 60)).toString().padStart(2, '0');
+          setPlayDuration(`${mmDur}:${ssDur}`);
+
+          // Finalizou a reprodução
+          if (e.currentPosition === e.duration) {
+            audioRecorderPlayer.stopPlayer().catch(() => {});
+            setPlayingAudioUrl(null);
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Erro ao reproduzir áudio:', err);
+      setPlayingAudioUrl(null);
+    }
   };
 
   // 6. Open partner profile card modal
@@ -530,21 +683,63 @@ export default function ChatScreen({ navigation, route }) {
           contentContainerStyle={styles.messagesList}
           renderItem={({ item }) => {
             const isMe = item.sender_id === currentUser?.id;
+            
+            // Detecta tipo de mensagem
+            const isImage = item.text.startsWith('[image]:');
+            const isAudio = item.text.startsWith('[audio]:');
+            const imageUrl = isImage ? item.text.substring(8) : null;
+            const audioUrl = isAudio ? item.text.substring(8) : null;
+
             return (
               <View
                 style={[
                   styles.messageBubble,
                   isMe ? styles.myBubble : styles.otherBubble,
+                  isImage && { padding: 4, borderRadius: 12 }, // Estilo mais limpo para imagens
                 ]}
               >
-                <Text
-                  style={[
-                    styles.messageText,
-                    isMe ? styles.myMessageText : styles.otherMessageText,
-                  ]}
-                >
-                  {item.text}
-                </Text>
+                {isImage ? (
+                  <Image source={{ uri: imageUrl }} style={{ width: 220, height: 160, borderRadius: 10 }} resizeMode="cover" />
+                ) : isAudio ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', minWidth: 150, paddingVertical: 4 }}>
+                    <TouchableOpacity
+                      onPress={() => togglePlayAudio(audioUrl)}
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 18,
+                        backgroundColor: isMe ? 'rgba(255,255,255,0.2)' : 'rgba(52, 199, 89, 0.1)',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        marginRight: 10
+                      }}
+                    >
+                      <Text style={{ fontSize: 16, color: isMe ? '#FFFFFF' : theme.colors.primary }}>
+                        {playingAudioUrl === audioUrl ? '⏸️' : '▶️'}
+                      </Text>
+                    </TouchableOpacity>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 13, color: isMe ? '#FFFFFF' : theme.colors.textPrimary, fontWeight: '500' }}>
+                        {playingAudioUrl === audioUrl ? `Tocando ${playTime}` : 'Mensagem de voz'}
+                      </Text>
+                      {playingAudioUrl === audioUrl && (
+                        <Text style={{ fontSize: 10, color: isMe ? 'rgba(255,255,255,0.7)' : theme.colors.textSecondary }}>
+                          Duração: {playDuration}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                ) : (
+                  <Text
+                    style={[
+                      styles.messageText,
+                      isMe ? styles.myMessageText : styles.otherMessageText,
+                    ]}
+                  >
+                    {item.text}
+                  </Text>
+                )}
+                
                 <View style={styles.messageFooter}>
                   <Text style={[styles.messageTime, isMe ? styles.myTimeText : styles.otherTimeText]}>
                     {formatTime(item.created_at)}
@@ -563,41 +758,62 @@ export default function ChatScreen({ navigation, route }) {
 
       {/* ── WhatsApp-style input bar ── */}
       <View style={styles.inputArea}>
-        {/* Emoji button */}
-        <TouchableOpacity style={styles.inputIconBtn}>
-          <Text style={styles.inputIcon}>😊</Text>
-        </TouchableOpacity>
+        {isRecording ? (
+          // Interface de gravação de áudio ativa
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'space-between' }}>
+            <TouchableOpacity style={styles.inputIconBtn} onPress={() => stopAudioRecording(false)}>
+              <Text style={{ fontSize: 22 }}>🗑️</Text>
+            </TouchableOpacity>
+            
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginHorizontal: 12 }}>
+              <Text style={{ fontSize: 12, marginRight: 6 }}>🔴</Text>
+              <Text style={{ color: '#FF3B30', fontSize: 16, fontWeight: '700' }}>Gravando: {recordTime}</Text>
+            </View>
 
-        {/* Text input */}
-        <TextInput
-          style={styles.messageInput}
-          placeholder={t('message_placeholder')}
-          placeholderTextColor={theme.colors.textSecondary}
-          value={messageText}
-          onChangeText={setMessageText}
-          multiline
-          returnKeyType="default"
-        />
-
-        {/* Attachment clip */}
-        <TouchableOpacity style={styles.inputIconBtn} onPress={handleAttachment}>
-          <Text style={styles.inputIcon}>📎</Text>
-        </TouchableOpacity>
-
-        {/* Camera */}
-        <TouchableOpacity style={styles.inputIconBtn} onPress={handleCamera}>
-          <Text style={styles.inputIcon}>📷</Text>
-        </TouchableOpacity>
-
-        {/* Send arrow (when typing) or Mic (when idle) */}
-        {messageText.trim().length > 0 ? (
-          <TouchableOpacity style={styles.sendFab} onPress={handleSendMessage}>
-            <Text style={styles.sendFabIcon}>➤</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.sendFab} onPress={() => stopAudioRecording(true)}>
+              <Text style={styles.sendFabIcon}>⏹️</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
-          <TouchableOpacity style={styles.sendFab} onPress={handleMic}>
-            <Text style={styles.sendFabIcon}>🎤</Text>
-          </TouchableOpacity>
+          // Interface normal (digitação e botões de mídia)
+          <>
+            {/* Emoji button */}
+            <TouchableOpacity style={styles.inputIconBtn}>
+              <Text style={styles.inputIcon}>😊</Text>
+            </TouchableOpacity>
+
+            {/* Text input */}
+            <TextInput
+              style={styles.messageInput}
+              placeholder={t('message_placeholder')}
+              placeholderTextColor={theme.colors.textSecondary}
+              value={messageText}
+              onChangeText={setMessageText}
+              multiline
+              returnKeyType="default"
+            />
+
+            {/* Attachment clip */}
+            <TouchableOpacity style={styles.inputIconBtn} onPress={handleAttachment}>
+              <Text style={styles.inputIcon}>📎</Text>
+            </TouchableOpacity>
+
+            {/* Camera */}
+            <TouchableOpacity style={styles.inputIconBtn} onPress={handleCamera}>
+              <Text style={styles.inputIcon}>📷</Text>
+            </TouchableOpacity>
+
+            {/* Send arrow (when typing) or Mic (when idle) */}
+            {messageText.trim().length > 0 ? (
+              <TouchableOpacity style={styles.sendFab} onPress={handleSendMessage}>
+                <Text style={styles.sendFabIcon}>➤</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={styles.sendFab} onPress={startAudioRecording}>
+                <Text style={styles.sendFabIcon}>🎤</Text>
+              </TouchableOpacity>
+            )}
+          </>
         )}
       </View>
     </ChatWrapper>

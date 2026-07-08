@@ -4,7 +4,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import React, { useState, useEffect } from 'react';
-import { StatusBar, StyleSheet, Text, View, Image } from 'react-native';
+import { StatusBar, StyleSheet, Text, View, Image, Platform } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -19,7 +19,6 @@ import DashboardScreen from './src/screens/DashboardScreen';
 import ChatScreen from './src/screens/ChatScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import SignUpScreen from './src/screens/SignUpScreen';
-import FloatingActionButton from './src/components/FloatingActionButton';
 import { LanguageProvider, useLanguage } from './src/utils/i18n';
 
 const Tab = createBottomTabNavigator();
@@ -78,21 +77,16 @@ function AppContent() {
         <View style={{ flex: 1 }}>
           <Tab.Navigator
             screenOptions={({ route }) => ({
+              tabBarHideOnKeyboard: true,
               tabBarActiveTintColor: theme.colors.primary,
               tabBarInactiveTintColor: theme.colors.textSecondary,
               tabBarStyle: {
-                backgroundColor: 'rgba(15, 23, 42, 0.75)',
-                borderWidth: 1,
-                borderColor: 'rgba(249, 250, 251, 0.08)',
-                height: 85,
-                paddingBottom: 25,
+                backgroundColor: 'rgb(15, 23, 42)',
+                borderTopWidth: 1,
+                borderTopColor: 'rgba(249, 250, 251, 0.08)',
+                height: Platform.OS === 'ios' ? 88 : 65,
+                paddingBottom: Platform.OS === 'ios' ? 30 : 10,
                 paddingTop: 10,
-                position: 'absolute',
-                bottom: 20,
-                left: 10,
-                right: 10,
-                borderRadius: 30,
-                ...theme.shadows.medium,
               },
               tabBarLabelStyle: {
                 fontSize: 10,
@@ -166,7 +160,7 @@ function AppContent() {
                 tabBarLabel: t('tab_profile'),
               }}
             >
-              {() => (
+              {({ navigation, route }) => (
                 <LifeListScreen
                   isGuest={isGuest}
                   user={session?.user}
@@ -174,12 +168,12 @@ function AppContent() {
                   onLogin={() => {
                     setIsGuest(false);
                   }}
+                  navigation={navigation}
+                  route={route}
                 />
               )}
             </Tab.Screen>
           </Tab.Navigator>
-
-          <FloatingActionButton />
         </View>
       </NavigationContainer>
     </SafeAreaView>

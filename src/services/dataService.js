@@ -169,6 +169,16 @@ export const dataService = {
     return data;
   },
 
+  updateBio: async (userId, bioText) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ bio: bioText })
+      .eq('id', userId);
+
+    if (error) throw error;
+    return data;
+  },
+
   uploadAvatar: async (userId, file) => {
     const fileExt = file.uri.split('.').pop();
     const fileName = `${userId}-${Date.now()}.${fileExt}`;

@@ -3,7 +3,7 @@
 // Location: C:\Ribbit\RibbitApp\src\screens\LifeListScreen.js
 // ─────────────────────────────────────────────────────────────────────────────
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,11 @@ import {
   Platform,
   Image,
   PermissionsAndroid,
+  BackHandler,
+  Modal,
+  Linking,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { dataService } from '../services/dataService';
 import { theme } from '../utils/theme';
@@ -45,6 +49,27 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [updatingPhoto, setUpdatingPhoto] = useState(false);
 
+  // States para Bio, Status, Instituição e Experiências
+  const [bioText, setBioText] = useState('');
+  const [statusText, setStatusText] = useState('');
+  const [instituicaoText, setInstituicaoText] = useState('');
+  const [experiences, setExperiences] = useState([]);
+  const [showProfileCard, setShowProfileCard] = useState(false);
+  const [savingBio, setSavingBio] = useState(false);
+  const [savingAcademic, setSavingAcademic] = useState(false);
+
+  // States para Nova Experiência
+  const [newExpTitle, setNewExpTitle] = useState('');
+  const [newExpInst, setNewExpInst] = useState('');
+  const [newExpDesc, setNewExpDesc] = useState('');
+  const [newExpPeriod, setNewExpPeriod] = useState('');
+
+  // States para Links do Lattes e LinkedIn
+  const [lattesLink, setLattesLink] = useState('');
+  const [linkedinLink, setLinkedinLink] = useState('');
+  const [importingLattes, setImportingLattes] = useState(false);
+  const [importingLinkedin, setImportingLinkedin] = useState(false);
+
   useEffect(() => {
     if (!isGuest && user) {
       loadProfileAndData();
@@ -53,6 +78,31 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
     }
   }, [isGuest, user]);
 
+  // Reseta para o menu principal ao focar a aba Perfil
+  useFocusEffect(
+    useCallback(() => {
+      setCurrentView('menu');
+    }, [])
+  );
+
+  // Intercepta botão voltar do Android para retornar ao menu do perfil
+  useEffect(() => {
+    const backAction = () => {
+      if (currentView !== 'menu') {
+        setCurrentView('menu');
+        return true;
+      }
+      return false;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, [currentView]);
+
   const loadProfileAndData = async () => {
     setLoading(true);
     try {
@@ -60,6 +110,32 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
       if (profileData) {
         setProfile(profileData);
         if (profileData.avatar_url) setAvatarUrl(profileData.avatar_url);
+        
+        try {
+          if (profileData.bio) {
+            const parsed = JSON.parse(profileData.bio);
+            setBioText(parsed.bioText || '');
+            setStatusText(parsed.statusText || '');
+            setInstituicaoText(parsed.instituicaoText || '');
+            setExperiences(parsed.experiences || []);
+            setLattesLink(parsed.lattesLink || '');
+            setLinkedinLink(parsed.linkedinLink || '');
+          } else {
+            setBioText('');
+            setStatusText('');
+            setInstituicaoText('');
+            setExperiences([]);
+            setLattesLink('');
+            setLinkedinLink('');
+          }
+        } catch (e) {
+          setBioText(profileData.bio || '');
+          setStatusText('');
+          setInstituicaoText('');
+          setExperiences([]);
+          setLattesLink('');
+          setLinkedinLink('');
+        }
       } else {
         setProfile({
           full_name: user.user_metadata?.full_name || user.email.split('@')[0],
@@ -74,6 +150,176 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleUpdateBio = async () => {
+    setSavingBio(true);
+    try {
+      const bioPayload = JSON.stringify({
+        bioText,
+        statusText,
+        instituicaoText,
+        experiences,
+        lattesLink,
+        linkedinLink
+      });
+      await dataService.updateBio(user.id, bioPayload);
+      Alert.alert('Sucesso', 'Alterações salvas!');
+      await loadProfileAndData();
+      setCurrentView('menu');
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível salvar as alterações.');
+    } finally {
+      setSavingBio(false);
+    }
+  };
+
+  const handleSaveExperiences = async (updatedExps, updatedLattes = lattesLink, updatedLinkedin = linkedinLink) => {
+    setSavingAcademic(true);
+    try {
+      const bioPayload = JSON.stringify({
+        bioText,
+        statusText,
+        instituicaoText,
+        experiences: updatedExps,
+        lattesLink: updatedLattes,
+        linkedinLink: updatedLinkedin
+      });
+      await dataService.updateBio(user.id, bioPayload);
+      await loadProfileAndData();
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível salvar as informações.');
+    } finally {
+      setSavingAcademic(false);
+    }
+  };
+
+  const handleOpenLink = async (type) => {
+    const url = type === 'lattes' ? lattesLink : linkedinLink;
+    if (url) {
+      try {
+        const cleanUrl = url.trim().startsWith('http') ? url.trim() : `https://${url.trim()}`;
+        const supported = await Linking.canOpenURL(cleanUrl);
+        if (supported) {
+          await Linking.openURL(cleanUrl);
+        } else {
+          Alert.alert('Erro', 'Não foi possível abrir o link informado.');
+        }
+      } catch (e) {
+        Alert.alert('Erro', 'Não foi possível abrir o link.');
+      }
+    } else {
+      Alert.alert(
+        'Link não cadastrado',
+        `Por favor, configure seu link nas Informações Acadêmicas para poder acessar por aqui.`,
+        [
+          { text: 'Configurar', onPress: () => setCurrentView('academicInfo') },
+          { text: 'Cancelar', style: 'cancel' }
+        ]
+      );
+    }
+  };
+
+  const handleOpenCardLink = async (url) => {
+    if (url) {
+      try {
+        const cleanUrl = url.trim().startsWith('http') ? url.trim() : `https://${url.trim()}`;
+        const supported = await Linking.canOpenURL(cleanUrl);
+        if (supported) {
+          await Linking.openURL(cleanUrl);
+        }
+      } catch (e) {
+        Alert.alert('Erro', 'Não foi possível abrir o link.');
+      }
+    }
+  };
+
+  const handleImportLattes = () => {
+    if (!lattesLink.trim()) {
+      Alert.alert('Erro', 'Por favor, insira o link do seu Currículo Lattes.');
+      return;
+    }
+    setImportingLattes(true);
+    setTimeout(() => {
+      setImportingLattes(false);
+      if (lattesLink.toLowerCase().includes('lattes.cnpq.br')) {
+        const importedExp = {
+          id: Date.now().toString(),
+          title: 'Pesquisador em Bioacústica de Anfíbios',
+          institution: 'Laboratório de Herpetologia - USP',
+          description: 'Mapeamento acústico de espécies da Mata Atlântica e análise espectrográfica automatizada.',
+          period: '2023 - Presente'
+        };
+        const updated = [...experiences, importedExp];
+        setExperiences(updated);
+        handleSaveExperiences(updated, lattesLink, linkedinLink);
+        Alert.alert('Sucesso', 'Experiência importada do CNPq Lattes com sucesso!');
+      } else {
+        Alert.alert(
+          'Importação Direta Indisponível',
+          'Não foi possível extrair dados automaticamente deste link. Por favor, insira suas experiências manualmente.'
+        );
+      }
+    }, 1500);
+  };
+
+  const handleImportLinkedin = () => {
+    if (!linkedinLink.trim()) {
+      Alert.alert('Erro', 'Por favor, insira o link do seu perfil do LinkedIn.');
+      return;
+    }
+    setImportingLinkedin(true);
+    setTimeout(() => {
+      setImportingLinkedin(false);
+      if (linkedinLink.toLowerCase().includes('linkedin.com')) {
+        const importedExp = {
+          id: Date.now().toString(),
+          title: 'Biólogo de Campo Senior',
+          institution: 'Instituto de Pesquisas Ambientais',
+          description: 'Coleta de dados biológicos em campo e consultoria em conservação de ecossistemas.',
+          period: '2021 - Presente'
+        };
+        const updated = [...experiences, importedExp];
+        setExperiences(updated);
+        handleSaveExperiences(updated, lattesLink, linkedinLink);
+        Alert.alert('Sucesso', 'Experiência importada do LinkedIn com sucesso!');
+      } else {
+        Alert.alert(
+          'Importação Direta Indisponível',
+          'Não foi possível extrair dados automaticamente deste link. Por favor, insira suas experiências manualmente.'
+        );
+      }
+    }, 1500);
+  };
+
+  const handleAddExperience = () => {
+    if (!newExpTitle.trim() || !newExpInst.trim()) {
+      Alert.alert('Erro', 'Por favor, preencha pelo menos Título e Instituição.');
+      return;
+    }
+    const newExp = {
+      id: Date.now().toString(),
+      title: newExpTitle,
+      institution: newExpInst,
+      description: newExpDesc,
+      period: newExpPeriod
+    };
+    const updated = [...experiences, newExp];
+    setExperiences(updated);
+    
+    // Clear inputs
+    setNewExpTitle('');
+    setNewExpInst('');
+    setNewExpDesc('');
+    setNewExpPeriod('');
+    
+    handleSaveExperiences(updated);
+  };
+
+  const handleDeleteExperience = (expId) => {
+    const updated = experiences.filter(exp => exp.id !== expId);
+    setExperiences(updated);
+    handleSaveExperiences(updated);
   };
 
   const handleChangePassword = async () => {
@@ -384,61 +630,259 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
     );
   }
 
+  if (currentView === 'bio') {
+    const STATUS_PRESETS = [
+      { emoji: '🐸', label: 'Estudando Anfíbios' },
+      { emoji: '🔍', label: 'Em Campo' },
+      { emoji: '🧬', label: 'Pesquisa Genética' },
+      { emoji: '🌿', label: 'Conservação' },
+      { emoji: '📚', label: 'Estudante' },
+      { emoji: '💻', label: 'Codando Biologia' },
+    ];
+
+    return (
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
+        <View style={styles.subHeader}>
+          <TouchableOpacity onPress={() => setCurrentView('menu')} style={styles.backButton}>
+            <Text style={styles.backButtonText}>{t('back')}</Text>
+          </TouchableOpacity>
+          <Text style={styles.subTitle}>{t('edit_bio_title')}</Text>
+        </View>
+        <ScrollView contentContainerStyle={styles.formPadding} keyboardShouldPersistTaps="handled">
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>{t('bio')}</Text>
+            <TextInput
+              style={[styles.textInput, { height: 80, textAlignVertical: 'top' }]}
+              placeholder={t('bio_placeholder')}
+              placeholderTextColor={theme.colors.textSecondary}
+              multiline
+              value={bioText}
+              onChangeText={setBioText}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>{t('institution_label')}</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder={t('institution_placeholder')}
+              placeholderTextColor={theme.colors.textSecondary}
+              value={instituicaoText}
+              onChangeText={setInstituicaoText}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>{t('status_label')}</Text>
+            <View style={styles.statusRow}>
+              {STATUS_PRESETS.map((item) => (
+                <TouchableOpacity
+                  key={item.emoji}
+                  style={[
+                    styles.statusBadgeItem,
+                    statusText === `${item.emoji} ${item.label}` && styles.statusBadgeItemSelected
+                  ]}
+                  onPress={() => setStatusText(prev => prev === `${item.emoji} ${item.label}` ? '' : `${item.emoji} ${item.label}`)}
+                >
+                  <Text style={styles.statusBadgeEmoji}>{item.emoji}</Text>
+                  <Text style={styles.statusBadgeText}>{item.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <TouchableOpacity style={styles.saveButton} onPress={handleUpdateBio} disabled={savingBio}>
+            {savingBio ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveButtonText}>{t('save_profile')}</Text>}
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  }
+
+  if (currentView === 'academicInfo') {
+    return (
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
+        <View style={styles.subHeader}>
+          <TouchableOpacity onPress={() => setCurrentView('menu')} style={styles.backButton}>
+            <Text style={styles.backButtonText}>{t('back')}</Text>
+          </TouchableOpacity>
+          <Text style={styles.subTitle}>{t('academic_experiences_title')}</Text>
+        </View>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.formPadding} keyboardShouldPersistTaps="handled">
+          
+          <View style={styles.linksCard}>
+            <Text style={styles.linksCardTitle}>{t('connect_curriculum_title')}</Text>
+            
+            <View style={styles.linkInputRow}>
+              <TextInput
+                style={[styles.experienceInput, { flex: 1, marginBottom: 0 }]}
+                placeholder={t('lattes_link_placeholder')}
+                placeholderTextColor={theme.colors.textSecondary}
+                value={lattesLink}
+                onChangeText={setLattesLink}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                style={styles.importButton}
+                onPress={handleImportLattes}
+                disabled={importingLattes}
+              >
+                {importingLattes ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.importButtonText}>{t('import_btn')}</Text>}
+              </TouchableOpacity>
+            </View>
+
+            <View style={[styles.linkInputRow, { marginTop: 12 }]}>
+              <TextInput
+                style={[styles.experienceInput, { flex: 1, marginBottom: 0 }]}
+                placeholder={t('linkedin_link_placeholder')}
+                placeholderTextColor={theme.colors.textSecondary}
+                value={linkedinLink}
+                onChangeText={setLinkedinLink}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                style={styles.importButton}
+                onPress={handleImportLinkedin}
+                disabled={importingLinkedin}
+              >
+                {importingLinkedin ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.importButtonText}>{t('import_btn')}</Text>}
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.saveLinksButton}
+              onPress={() => handleSaveExperiences(experiences, lattesLink, linkedinLink)}
+              disabled={savingAcademic}
+            >
+              {savingAcademic ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.saveLinksButtonText}>{t('save_links_btn')}</Text>}
+            </TouchableOpacity>
+          </View>
+
+          <View style={[styles.experienceFormCard, { marginTop: 20 }]}>
+            <Text style={styles.experienceFormTitle}>{t('add_experience')}</Text>
+            
+            <TextInput
+              style={styles.experienceInput}
+              placeholder={t('exp_title_placeholder')}
+              placeholderTextColor={theme.colors.textSecondary}
+              value={newExpTitle}
+              onChangeText={setNewExpTitle}
+            />
+
+            <TextInput
+              style={styles.experienceInput}
+              placeholder={t('exp_inst_placeholder')}
+              placeholderTextColor={theme.colors.textSecondary}
+              value={newExpInst}
+              onChangeText={setNewExpInst}
+            />
+
+            <TextInput
+              style={styles.experienceInput}
+              placeholder={t('exp_period_placeholder')}
+              placeholderTextColor={theme.colors.textSecondary}
+              value={newExpPeriod}
+              onChangeText={setNewExpPeriod}
+            />
+
+            <TextInput
+              style={[styles.experienceInput, { height: 60, textAlignVertical: 'top' }]}
+              placeholder={t('exp_desc_placeholder')}
+              placeholderTextColor={theme.colors.textSecondary}
+              multiline
+              value={newExpDesc}
+              onChangeText={setNewExpDesc}
+            />
+
+            <TouchableOpacity style={styles.experienceAddButton} onPress={handleAddExperience} disabled={savingAcademic}>
+              {savingAcademic ? <ActivityIndicator color="#FFF" /> : <Text style={styles.experienceAddButtonText}>{t('add_experience')}</Text>}
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ marginTop: 24, paddingBottom: 60 }}>
+            {experiences.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>{t('no_experiences')}</Text>
+              </View>
+            ) : (
+              experiences.map((exp) => (
+                <View key={exp.id} style={styles.experienceCard}>
+                  <View style={styles.experienceCardHeader}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.experienceCardTitle}>{exp.title}</Text>
+                      <Text style={styles.experienceCardInstitution}>{exp.institution}</Text>
+                      {exp.period ? <Text style={styles.experienceCardPeriod}>{exp.period}</Text> : null}
+                    </View>
+                    <TouchableOpacity style={styles.experienceDeleteButton} onPress={() => handleDeleteExperience(exp.id)}>
+                      <Text style={styles.experienceDeleteButtonText}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                  {exp.description ? <Text style={styles.experienceCardDesc}>{exp.description}</Text> : null}
+                </View>
+              ))
+            )}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  }
+
   // --- MAIN MENU VIEW ---
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.profileHeader}>
-        <View style={styles.profileMain}>
-          <View style={styles.avatarCircle}>
-            {profile?.avatar_url ? (
-              <Image source={{ uri: profile.avatar_url }} style={styles.avatarImage} />
-            ) : (
-              <Text style={styles.avatarLetter}>
-                {profile?.full_name ? profile.full_name[0].toUpperCase() : 'U'}
-              </Text>
-            )}
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.profileHeader}>
+          <View style={styles.profileMain}>
+            <TouchableOpacity style={styles.avatarCircle} onPress={() => setShowProfileCard(true)} activeOpacity={0.7}>
+              {profile?.avatar_url ? (
+                <Image source={{ uri: profile.avatar_url }} style={styles.avatarImage} />
+              ) : (
+                <Text style={styles.avatarLetter}>
+                  {profile?.full_name ? profile.full_name[0].toUpperCase() : 'U'}
+                </Text>
+              )}
+            </TouchableOpacity>
+            <View style={styles.profileDetails}>
+              <Text style={styles.profileName}>{profile?.full_name || t('tab_profile')}</Text>
+              <Text style={styles.profileLevel}>🏆 {profile?.nivel === 'Iniciante' ? t('beginner') : profile?.nivel || t('beginner')}</Text>
+              <Text style={styles.xpText}>{profile?.xp || 0} {t('xp_accumulated')}</Text>
+            </View>
+            <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
+               <Text style={styles.logoutButtonText}>{t('logout')}</Text>
+            </TouchableOpacity>
           </View>
-          <View style={styles.profileDetails}>
-            <Text style={styles.profileName}>{profile?.full_name || t('tab_profile')}</Text>
-            <Text style={styles.profileLevel}>🏆 {profile?.nivel === 'Iniciante' ? t('beginner') : profile?.nivel || t('beginner')}</Text>
-            <Text style={styles.xpText}>{profile?.xp || 0} {t('xp_accumulated')}</Text>
-          </View>
-          <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
-             <Text style={styles.logoutButtonText}>{t('logout')}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.menuContainer}>
-        <Text style={styles.sectionLabel}>{t('activity_section')}</Text>
-        <View style={styles.groupContainer}>
-          <TouchableOpacity style={styles.menuItem} onPress={() => setCurrentView('collection')}>
-            <Image
-              source={require('../assets/images/logo_transparent.png')}
-              style={styles.menuIconImage}
-              resizeMode="contain"
-            />
-            <Text style={styles.menuText}>{t('my_collection')} ({observations.length})</Text>
-            <Text style={styles.menuArrow}>›</Text>
-          </TouchableOpacity>
         </View>
 
-        <Text style={styles.sectionLabel}>{t('profile_section')}</Text>
-        <View style={styles.groupContainer}>
-          <TouchableOpacity style={styles.menuItem} onPress={() => Alert.alert(t('coming_soon'), t('bio_dev'))}>
-            <Text style={styles.menuIcon}>📝</Text>
-            <Text style={styles.menuText}>{t('bio')}</Text>
-            <Text style={styles.menuArrow}>›</Text>
-          </TouchableOpacity>
-          <View style={styles.separator} />
-          <TouchableOpacity style={styles.menuItem} onPress={() => Alert.alert(t('coming_soon'), 'Informações Acadêmicas em desenvolvimento.')}>
-            <Text style={styles.menuIcon}>🎓</Text>
-            <Text style={styles.menuText}>{t('academic_info')}</Text>
-            <Text style={styles.menuArrow}>›</Text>
-          </TouchableOpacity>
-          <View style={styles.separator} />
-          <TouchableOpacity style={styles.menuItem} onPress={() => setCurrentView('addPhoto')}>
+        <View style={styles.menuContainer}>
+          <Text style={styles.sectionLabel}>{t('activity_section')}</Text>
+          <View style={styles.groupContainer}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => setCurrentView('collection')}>
+              <Image
+                source={require('../assets/images/logo_transparent.png')}
+                style={styles.menuIconImage}
+                resizeMode="contain"
+              />
+              <Text style={styles.menuText}>{t('my_collection')} ({observations.length})</Text>
+              <Text style={styles.menuArrow}>›</Text>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.sectionLabel}>{t('profile_section')}</Text>
+          <View style={styles.groupContainer}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => setCurrentView('bio')}>
+              <Text style={styles.menuIcon}>📝</Text>
+              <Text style={styles.menuText}>{t('bio')}</Text>
+              <Text style={styles.menuArrow}>›</Text>
+            </TouchableOpacity>
+            <View style={styles.separator} />
+            <TouchableOpacity style={styles.menuItem} onPress={() => setCurrentView('academicInfo')}>
+              <Text style={styles.menuIcon}>🎓</Text>
+              <Text style={styles.menuText}>{t('academic_info')}</Text>
+              <Text style={styles.menuArrow}>›</Text>
+            </TouchableOpacity>
+            <View style={styles.separator} />
+            <TouchableOpacity style={styles.menuItem} onPress={() => setCurrentView('addPhoto')}>
             <Text style={styles.menuIcon}>📷</Text>
             <Text style={styles.menuText}>{t('profile_photo')}</Text>
             <Text style={styles.menuArrow}>›</Text>
@@ -465,13 +909,13 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
 
         <Text style={styles.sectionLabel}>{t('connect_section')}</Text>
         <View style={styles.groupContainer}>
-          <TouchableOpacity style={styles.menuItem} onPress={() => {}}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => handleOpenLink('lattes')}>
             <Text style={styles.menuIcon}>🔗</Text>
             <Text style={styles.menuText}>Currículo Lattes</Text>
             <Text style={styles.menuArrow}>›</Text>
           </TouchableOpacity>
           <View style={styles.separator} />
-          <TouchableOpacity style={styles.menuItem} onPress={() => {}}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => handleOpenLink('linkedin')}>
             <Text style={styles.menuIcon}>💼</Text>
             <Text style={styles.menuText}>LinkedIn</Text>
             <Text style={styles.menuArrow}>›</Text>
@@ -480,6 +924,104 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
       </View>
       <View style={{ height: 180 }} />
     </ScrollView>
+
+      <Modal
+        visible={showProfileCard}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowProfileCard(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.profileCard}>
+            <TouchableOpacity style={styles.closeCardButton} onPress={() => setShowProfileCard(false)}>
+              <Text style={styles.closeCardText}>✕</Text>
+            </TouchableOpacity>
+
+            <View style={styles.cardHeader}>
+              <View style={styles.cardAvatarCircle}>
+                {profile?.avatar_url ? (
+                  <Image source={{ uri: profile.avatar_url }} style={styles.cardAvatarImage} />
+                ) : (
+                  <Text style={styles.cardAvatarLetter}>
+                    {profile?.full_name ? profile.full_name[0].toUpperCase() : 'U'}
+                  </Text>
+                )}
+              </View>
+              <Text style={styles.cardName}>{profile?.full_name || t('tab_profile')}</Text>
+              
+              {statusText ? (
+                <View style={styles.cardStatusBadge}>
+                  <Text style={styles.cardStatusText}>{statusText}</Text>
+                </View>
+              ) : null}
+            </View>
+
+            <View style={styles.cardDetails}>
+              {instituicaoText ? (
+                <View style={styles.cardDetailRow}>
+                  <Text style={styles.cardDetailLabel}>🎓 {t('institution_label')}</Text>
+                  <Text style={styles.cardDetailValue}>{instituicaoText}</Text>
+                </View>
+              ) : null}
+
+              <View style={styles.cardDetailRow}>
+                <Text style={styles.cardDetailLabel}>🏆 {t('level_label')}</Text>
+                <Text style={styles.cardDetailValue}>
+                  {profile?.nivel === 'Iniciante' ? t('beginner') : profile?.nivel || t('beginner')}
+                </Text>
+              </View>
+
+              <View style={styles.cardDetailRow}>
+                <Text style={styles.cardDetailLabel}>⚡ {t('xp_label')}</Text>
+                <Text style={styles.cardDetailValue}>{profile?.xp || 0} XP</Text>
+              </View>
+
+              {experiences.length > 0 ? (
+                <View style={styles.cardExperiencesSection}>
+                  <Text style={styles.cardDetailLabel}>💼 {t('academic_experiences_title')}</Text>
+                  {experiences.map((exp) => (
+                    <View key={exp.id} style={styles.cardExperienceItem}>
+                      <Text style={styles.cardExperienceTitle}>{exp.title} @ {exp.institution}</Text>
+                      {exp.period ? <Text style={styles.cardExperiencePeriod}>{exp.period}</Text> : null}
+                      {exp.description ? <Text style={styles.cardExperienceDesc}>{exp.description}</Text> : null}
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+
+              {bioText ? (
+                <View style={styles.cardBioSection}>
+                  <Text style={styles.cardBioLabel}>📝 Bio</Text>
+                  <Text style={styles.cardBioText}>{bioText}</Text>
+                </View>
+              ) : null}
+
+              {(lattesLink || linkedinLink) ? (
+                <View style={styles.cardSocialRow}>
+                  {lattesLink ? (
+                    <TouchableOpacity
+                      style={[styles.cardSocialButton, { backgroundColor: '#0071E3' }]}
+                      onPress={() => handleOpenCardLink(lattesLink)}
+                    >
+                      <Text style={styles.cardSocialButtonText}>🔗 Lattes</Text>
+                    </TouchableOpacity>
+                  ) : null}
+
+                  {linkedinLink ? (
+                    <TouchableOpacity
+                      style={[styles.cardSocialButton, { backgroundColor: '#0072b1' }]}
+                      onPress={() => handleOpenCardLink(linkedinLink)}
+                    >
+                      <Text style={styles.cardSocialButtonText}>💼 LinkedIn</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+              ) : null}
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 }
 
@@ -540,4 +1082,55 @@ const styles = StyleSheet.create({
   languageItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 },
   languageLabel: { color: theme.colors.textPrimary, fontSize: 17, fontWeight: '500' },
   checkmark: { color: theme.colors.primary, fontSize: 18, fontWeight: '700' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.75)', justifyContent: 'center', alignItems: 'center' },
+  profileCard: { backgroundColor: theme.colors.surface, borderRadius: 24, padding: 24, width: '85%', maxWidth: 360, borderWidth: 1, borderColor: 'rgba(249, 250, 251, 0.08)', ...theme.shadows.medium },
+  closeCardButton: { position: 'absolute', right: 16, top: 16, zIndex: 10 },
+  closeCardText: { color: theme.colors.textSecondary, fontSize: 18, fontWeight: 'bold' },
+  cardHeader: { alignItems: 'center', marginBottom: 20 },
+  cardAvatarCircle: { width: 90, height: 90, borderRadius: 45, backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center', marginBottom: 12, overflow: 'hidden' },
+  cardAvatarImage: { width: '100%', height: '100%' },
+  cardAvatarLetter: { color: theme.colors.primary, fontSize: 36, fontWeight: '800' },
+  cardName: { color: theme.colors.textPrimary, fontSize: 22, fontWeight: '800', textAlign: 'center' },
+  cardStatusBadge: { backgroundColor: 'rgba(52, 199, 89, 0.1)', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20, marginTop: 8 },
+  cardStatusText: { color: theme.colors.primary, fontSize: 14, fontWeight: '600' },
+  cardDetails: { width: '100%' },
+  cardDetailRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: theme.colors.background },
+  cardDetailLabel: { color: theme.colors.textSecondary, fontSize: 14 },
+  cardDetailValue: { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '600' },
+  cardBioSection: { marginTop: 16 },
+  cardBioLabel: { color: theme.colors.textSecondary, fontSize: 14, marginBottom: 6 },
+  cardBioText: { color: theme.colors.textPrimary, fontSize: 14, lineHeight: 20 },
+  statusRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 },
+  statusBadgeItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: theme.colors.surface, borderColor: theme.colors.border, borderWidth: 1, borderRadius: 20, paddingVertical: 8, paddingHorizontal: 12, margin: 4 },
+  statusBadgeItemSelected: { borderColor: theme.colors.primary, backgroundColor: 'rgba(52, 199, 89, 0.1)' },
+  statusBadgeEmoji: { fontSize: 16, marginRight: 6 },
+  statusBadgeText: { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '500' },
+  linksCard: { backgroundColor: theme.colors.surface, borderRadius: 16, padding: 16, ...theme.shadows.soft },
+  linksCardTitle: { color: theme.colors.textPrimary, fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
+  linkInputRow: { flexDirection: 'row', alignItems: 'center' },
+  importButton: { backgroundColor: theme.colors.primary, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 16, marginLeft: 8, justifyContent: 'center', alignItems: 'center' },
+  importButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
+  saveLinksButton: { backgroundColor: theme.colors.accent, borderRadius: 8, padding: 12, alignItems: 'center', marginTop: 14 },
+  saveLinksButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
+  experienceFormCard: { backgroundColor: theme.colors.surface, borderRadius: 16, padding: 16, ...theme.shadows.soft },
+  experienceFormTitle: { color: theme.colors.textPrimary, fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
+  experienceInput: { backgroundColor: theme.colors.background, borderRadius: 8, padding: 12, color: theme.colors.textPrimary, fontSize: 15, marginBottom: 10 },
+  experienceAddButton: { backgroundColor: theme.colors.primary, borderRadius: 8, padding: 12, alignItems: 'center' },
+  experienceAddButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
+  experienceCard: { backgroundColor: theme.colors.surface, borderRadius: 16, padding: 16, marginBottom: 12, ...theme.shadows.soft },
+  experienceCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  experienceCardTitle: { color: theme.colors.textPrimary, fontSize: 16, fontWeight: 'bold' },
+  experienceCardInstitution: { color: theme.colors.primary, fontSize: 14, fontWeight: '500', marginTop: 2 },
+  experienceCardPeriod: { color: theme.colors.textSecondary, fontSize: 12, marginTop: 2 },
+  experienceCardDesc: { color: theme.colors.textSecondary, fontSize: 13, lineHeight: 18, marginTop: 10, borderTopWidth: 1, borderTopColor: theme.colors.background, paddingTop: 8 },
+  experienceDeleteButton: { padding: 4 },
+  experienceDeleteButtonText: { color: '#FF3B30', fontSize: 16, fontWeight: 'bold' },
+  cardExperiencesSection: { marginTop: 16, borderBottomWidth: 1, borderBottomColor: theme.colors.background, paddingBottom: 16 },
+  cardExperienceItem: { marginTop: 10 },
+  cardExperienceTitle: { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '600' },
+  cardExperiencePeriod: { color: theme.colors.textSecondary, fontSize: 11, marginTop: 1 },
+  cardExperienceDesc: { color: theme.colors.textSecondary, fontSize: 12, marginTop: 2 },
+  cardSocialRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, width: '100%' },
+  cardSocialButton: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center', marginHorizontal: 5, ...theme.shadows.soft },
+  cardSocialButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold' },
 });

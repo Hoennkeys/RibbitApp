@@ -108,7 +108,7 @@ const ProgressBar = ({ xp }) => {
   );
 };
 
-export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
+export default function LifeListScreen({ isGuest, user, onLogin, onLogout, navigation, route }) {
   const { t, locale, changeLanguage } = useLanguage();
   const [profile, setProfile] = useState(null);
   const [observations, setObservations] = useState([]);
@@ -143,6 +143,21 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
   const [levelUpName, setLevelUpName] = useState('');
 
+  // Followers States
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [followersList, setFollowersList] = useState([]);
+  const [followingList, setFollowingList] = useState([]);
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [viewingFollowerType, setViewingFollowerType] = useState('followers'); // 'followers' or 'following'
+
+  // Card User Profile States (for viewing other users' cards)
+  const [cardUserProfile, setCardUserProfile] = useState(null);
+  const [isFollowingCardUser, setIsFollowingCardUser] = useState(false);
+  const [cardUserFollowersCount, setCardUserFollowersCount] = useState(0);
+  const [cardUserFollowingCount, setCardUserFollowingCount] = useState(0);
+  const [loadingCardUser, setLoadingCardUser] = useState(false);
+
   // States para Nova Experiência
   const [newExpTitle, setNewExpTitle] = useState('');
   const [newExpInst, setNewExpInst] = useState('');
@@ -168,8 +183,117 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
   useFocusEffect(
     useCallback(() => {
       setCurrentView('menu');
-    }, [])
+      if (user) {
+        loadFollowersData(user.id);
+      }
+    }, [user, loadFollowersData])
   );
+
+  useEffect(() => {
+    if (route?.params?.viewUserProfileId) {
+      const partnerId = route.params.viewUserProfileId;
+      handleOpenPartnerProfile(partnerId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route?.params?.viewUserProfileId]);
+
+  const loadFollowersData = useCallback(async (targetId) => {
+    try {
+      const followers = await dataService.getFollowers(targetId);
+      const following = await dataService.getFollowing(targetId);
+      if (user && targetId === user.id) {
+        setFollowersCount(followers.length);
+        setFollowingCount(following.length);
+        setFollowersList(followers);
+        setFollowingList(following);
+      }
+      return { followers, following };
+    } catch (e) {
+      console.error(e);
+      return { followers: [], following: [] };
+    }
+  }, [user]);
+
+  const handleOpenFollowersModal = (type) => {
+    setViewingFollowerType(type);
+    setShowFollowersModal(true);
+  };
+
+  const handleOpenPartnerProfile = async (partnerId) => {
+    setLoadingCardUser(true);
+    try {
+      const partnerProfile = await dataService.getProfile(partnerId);
+      if (partnerProfile) {
+        setCardUserProfile(partnerProfile);
+        
+        const isFollowing = await dataService.checkIfFollowing(partnerId, user.id);
+        setIsFollowingCardUser(isFollowing);
+        
+        const followers = await dataService.getFollowers(partnerId);
+        const following = await dataService.getFollowing(partnerId);
+        setCardUserFollowersCount(followers.length);
+        setCardUserFollowingCount(following.length);
+        
+        setShowProfileCard(true);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingCardUser(false);
+    }
+  };
+
+  const handleCloseProfileCard = () => {
+    setShowProfileCard(false);
+    setCardUserProfile(null);
+    if (navigation && route?.params?.viewUserProfileId) {
+      navigation.setParams({ viewUserProfileId: null });
+    }
+  };
+
+  const handleToggleFollow = async () => {
+    if (!cardUserProfile) return;
+    try {
+      if (isFollowingCardUser) {
+        await dataService.unfollowUser(cardUserProfile.id, user.id);
+        setIsFollowingCardUser(false);
+        setCardUserFollowersCount(prev => Math.max(0, prev - 1));
+        Alert.alert('Sucesso', t('unfollow'));
+      } else {
+        await dataService.followUser(cardUserProfile.id, user.id);
+        setIsFollowingCardUser(true);
+        setCardUserFollowersCount(prev => prev + 1);
+        Alert.alert('Sucesso', t('new_follower'));
+      }
+      await loadFollowersData(user.id);
+    } catch (e) {
+      Alert.alert('Erro', 'Não foi possível completar a ação.');
+    }
+  };
+
+  const handleStartChatFromCard = async () => {
+    if (!cardUserProfile) return;
+    try {
+      const chat = await dataService.getOrCreateChat(user.id, cardUserProfile.id);
+      handleCloseProfileCard();
+      navigation.navigate('Chat', { selectedChatId: chat.id });
+    } catch (e) {
+      Alert.alert('Erro', 'Não foi possível iniciar o chat.');
+    }
+  };
+
+  const getCardUserBioDetails = () => {
+    const targetProfile = cardUserProfile || profile;
+    let bioObj = { bioText: '', statusText: '', instituicaoText: '', experiences: [], lattesLink: '', linkedinLink: '' };
+    try {
+      if (targetProfile && targetProfile.bio) {
+        bioObj = JSON.parse(targetProfile.bio);
+      }
+    } catch (e) {
+      bioObj.bioText = targetProfile?.bio || '';
+    }
+    return bioObj;
+  };
 
   // Intercepta botão voltar do Android para retornar ao menu do perfil
   useEffect(() => {
@@ -242,6 +366,7 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
       }
       const obsData = await dataService.getObservations(user.id);
       setObservations(obsData);
+      await loadFollowersData(user.id);
     } catch (error) {
       console.error('Erro ao carregar perfil:', error);
     } finally {
@@ -1043,6 +1168,21 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
                 🏆 {sanitizeLevel(profile?.nivel)} • {getAttribution(user, profile)}
               </Text>
               <ProgressBar xp={profile?.xp || 0} />
+              
+              <View style={styles.followersRow}>
+                <TouchableOpacity onPress={() => handleOpenFollowersModal('followers')}>
+                  <Text style={styles.followersText}>
+                    <Text style={{ fontWeight: 'bold', color: theme.colors.textPrimary }}>{followersCount}</Text> {t('followers_label')}
+                  </Text>
+                </TouchableOpacity>
+                <Text style={styles.followersDot}> • </Text>
+                <TouchableOpacity onPress={() => handleOpenFollowersModal('following')}>
+                  <Text style={styles.followersText}>
+                    <Text style={{ fontWeight: 'bold', color: theme.colors.textPrimary }}>{followingCount}</Text> {t('following_label')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
               <Text style={styles.xpText}>{profile?.xp || 0} {t('xp_accumulated')}</Text>
             </View>
           </View>
@@ -1129,98 +1269,200 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
         visible={showProfileCard}
         transparent={true}
         animationType="fade"
-        onRequestClose={() => setShowProfileCard(false)}
+        onRequestClose={handleCloseProfileCard}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.profileCard}>
-            <TouchableOpacity style={styles.closeCardButton} onPress={() => setShowProfileCard(false)}>
+            <TouchableOpacity style={styles.closeCardButton} onPress={handleCloseProfileCard}>
               <Text style={styles.closeCardText}>✕</Text>
             </TouchableOpacity>
 
-            <View style={styles.cardHeader}>
-              <View style={styles.cardAvatarCircle}>
-                {profile?.avatar_url ? (
-                  <Image source={{ uri: profile.avatar_url }} style={styles.cardAvatarImage} />
-                ) : (
-                  <Text style={styles.cardAvatarLetter}>
-                    {profile?.full_name ? profile.full_name[0].toUpperCase() : 'U'}
-                  </Text>
-                )}
-              </View>
-              <Text style={styles.cardName}>{profile?.full_name || t('tab_profile')}</Text>
-              
-              {statusText ? (
-                <View style={styles.cardStatusBadge}>
-                  <Text style={styles.cardStatusText}>{statusText}</Text>
-                </View>
-              ) : null}
-            </View>
+            {loadingCardUser ? (
+              <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginVertical: 40 }} />
+            ) : (
+              (() => {
+                const activeProfile = cardUserProfile || profile;
+                const cardBio = getCardUserBioDetails();
+                
+                return (
+                  <ScrollView showsVerticalScrollIndicator={false} style={{ width: '100%' }}>
+                    <View style={styles.cardHeader}>
+                      <View style={styles.cardAvatarCircle}>
+                        {activeProfile?.avatar_url ? (
+                          <Image source={{ uri: activeProfile.avatar_url }} style={styles.cardAvatarImage} />
+                        ) : (
+                          <Text style={styles.cardAvatarLetter}>
+                            {activeProfile?.full_name ? activeProfile.full_name[0].toUpperCase() : 'U'}
+                          </Text>
+                        )}
+                      </View>
+                      <Text style={styles.cardName}>{activeProfile?.full_name || t('tab_profile')}</Text>
+                      
+                      {cardBio.statusText ? (
+                        <View style={styles.cardStatusBadge}>
+                          <Text style={styles.cardStatusText}>{cardBio.statusText}</Text>
+                        </View>
+                      ) : null}
 
-            <View style={styles.cardDetails}>
-              {instituicaoText ? (
-                <View style={styles.cardDetailRow}>
-                  <Text style={styles.cardDetailLabel}>🎓 {t('institution_label')}</Text>
-                  <Text style={styles.cardDetailValue}>{instituicaoText}</Text>
-                </View>
-              ) : null}
-
-              <View style={styles.cardDetailRow}>
-                <Text style={styles.cardDetailLabel}>🏆 {t('level_label')}</Text>
-                <Text style={styles.cardDetailValue}>
-                  {sanitizeLevel(profile?.nivel)} • {getAttribution(user, profile)}
-                </Text>
-              </View>
-
-              <View style={[styles.cardDetailRow, { flexDirection: 'column', alignItems: 'stretch' }]}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <Text style={styles.cardDetailLabel}>⚡ {t('xp_label')}</Text>
-                  <Text style={styles.cardDetailValue}>{profile?.xp || 0} XP</Text>
-                </View>
-                <ProgressBar xp={profile?.xp || 0} />
-              </View>
-
-              {experiences.length > 0 ? (
-                <View style={styles.cardExperiencesSection}>
-                  <Text style={styles.cardDetailLabel}>💼 {t('academic_experiences_title')}</Text>
-                  {experiences.map((exp) => (
-                    <View key={exp.id} style={styles.cardExperienceItem}>
-                      <Text style={styles.cardExperienceTitle}>{exp.title} @ {exp.institution}</Text>
-                      {exp.period ? <Text style={styles.cardExperiencePeriod}>{exp.period}</Text> : null}
-                      {exp.description ? <Text style={styles.cardExperienceDesc}>{exp.description}</Text> : null}
+                      <View style={[styles.followersRow, { marginTop: 10 }]}>
+                        <Text style={[styles.followersText, { color: theme.colors.textSecondary }]}>
+                          <Text style={{ fontWeight: 'bold', color: theme.colors.textPrimary }}>
+                            {cardUserProfile ? cardUserFollowersCount : followersCount}
+                          </Text> {t('followers_label')}
+                        </Text>
+                        <Text style={styles.followersDot}> • </Text>
+                        <Text style={[styles.followersText, { color: theme.colors.textSecondary }]}>
+                          <Text style={{ fontWeight: 'bold', color: theme.colors.textPrimary }}>
+                            {cardUserProfile ? cardUserFollowingCount : followingCount}
+                          </Text> {t('following_label')}
+                        </Text>
+                      </View>
                     </View>
-                  ))}
-                </View>
-              ) : null}
 
-              {bioText ? (
-                <View style={styles.cardBioSection}>
-                  <Text style={styles.cardBioLabel}>📝 Bio</Text>
-                  <Text style={styles.cardBioText}>{bioText}</Text>
-                </View>
-              ) : null}
+                    <View style={styles.cardDetails}>
+                      {cardBio.instituicaoText ? (
+                        <View style={styles.cardDetailRow}>
+                          <Text style={styles.cardDetailLabel}>🎓 {t('institution_label')}</Text>
+                          <Text style={styles.cardDetailValue}>{cardBio.instituicaoText}</Text>
+                        </View>
+                      ) : null}
 
-              {(lattesLink || linkedinLink) ? (
-                <View style={styles.cardSocialRow}>
-                  {lattesLink ? (
-                    <TouchableOpacity
-                      style={[styles.cardSocialButton, { backgroundColor: '#0071E3' }]}
-                      onPress={() => handleOpenCardLink(lattesLink)}
-                    >
-                      <Text style={styles.cardSocialButtonText}>🔗 Lattes</Text>
-                    </TouchableOpacity>
-                  ) : null}
+                      <View style={styles.cardDetailRow}>
+                        <Text style={styles.cardDetailLabel}>🏆 {t('level_label')}</Text>
+                        <Text style={styles.cardDetailValue}>
+                          {sanitizeLevel(activeProfile?.nivel)} • {getAttribution(user, activeProfile)}
+                        </Text>
+                      </View>
 
-                  {linkedinLink ? (
-                    <TouchableOpacity
-                      style={[styles.cardSocialButton, { backgroundColor: '#0072b1' }]}
-                      onPress={() => handleOpenCardLink(linkedinLink)}
-                    >
-                      <Text style={styles.cardSocialButtonText}>💼 LinkedIn</Text>
-                    </TouchableOpacity>
-                  ) : null}
-                </View>
-              ) : null}
-            </View>
+                      <View style={[styles.cardDetailRow, { flexDirection: 'column', alignItems: 'stretch' }]}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                          <Text style={styles.cardDetailLabel}>⚡ {t('xp_label')}</Text>
+                          <Text style={styles.cardDetailValue}>{activeProfile?.xp || 0} XP</Text>
+                        </View>
+                        <ProgressBar xp={activeProfile?.xp || 0} />
+                      </View>
+
+                      {cardUserProfile && cardUserProfile.id !== user.id && (
+                        <View style={{ marginVertical: 8 }}>
+                          <TouchableOpacity
+                            style={[
+                              styles.saveButton,
+                              { backgroundColor: isFollowingCardUser ? '#8E8E93' : theme.colors.primary, marginBottom: 8 }
+                            ]}
+                            onPress={handleToggleFollow}
+                          >
+                            <Text style={styles.saveButtonText}>
+                              {isFollowingCardUser ? t('unfollow') : t('follow')}
+                            </Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={[styles.saveButton, { backgroundColor: theme.colors.accent, marginBottom: 8 }]}
+                            onPress={handleStartChatFromCard}
+                          >
+                            <Text style={styles.saveButtonText}>{t('start_chat')}</Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
+
+                      {cardBio.experiences && cardBio.experiences.length > 0 ? (
+                        <View style={styles.cardExperiencesSection}>
+                          <Text style={styles.cardDetailLabel}>💼 {t('academic_experiences_title')}</Text>
+                          {cardBio.experiences.map((exp) => (
+                            <View key={exp.id} style={styles.cardExperienceItem}>
+                              <Text style={styles.cardExperienceTitle}>{exp.title} @ {exp.institution}</Text>
+                              {exp.period ? <Text style={styles.cardExperiencePeriod}>{exp.period}</Text> : null}
+                              {exp.description ? <Text style={styles.cardExperienceDesc}>{exp.description}</Text> : null}
+                            </View>
+                          ))}
+                        </View>
+                      ) : null}
+
+                      {cardBio.bioText ? (
+                        <View style={styles.cardBioSection}>
+                          <Text style={styles.cardBioLabel}>📝 Bio</Text>
+                          <Text style={styles.cardBioText}>{cardBio.bioText}</Text>
+                        </View>
+                      ) : null}
+
+                      {(cardBio.lattesLink || cardBio.linkedinLink) ? (
+                        <View style={styles.cardSocialRow}>
+                          {cardBio.lattesLink ? (
+                            <TouchableOpacity
+                              style={[styles.cardSocialButton, { backgroundColor: '#0071E3' }]}
+                              onPress={() => handleOpenCardLink(cardBio.lattesLink)}
+                            >
+                              <Text style={styles.cardSocialButtonText}>🔗 Lattes</Text>
+                            </TouchableOpacity>
+                          ) : null}
+
+                          {cardBio.linkedinLink ? (
+                            <TouchableOpacity
+                              style={[styles.cardSocialButton, { backgroundColor: '#0072b1' }]}
+                              onPress={() => handleOpenCardLink(cardBio.linkedinLink)}
+                            >
+                              <Text style={styles.cardSocialButtonText}>💼 LinkedIn</Text>
+                            </TouchableOpacity>
+                          ) : null}
+                        </View>
+                      ) : null}
+                    </View>
+                  </ScrollView>
+                );
+              })()
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showFollowersModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowFollowersModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.profileCard}>
+            <TouchableOpacity style={styles.closeCardButton} onPress={() => setShowFollowersModal(false)}>
+              <Text style={styles.closeCardText}>✕</Text>
+            </TouchableOpacity>
+            
+            <Text style={[styles.cardName, { marginBottom: 16 }]}>
+              {viewingFollowerType === 'followers' ? t('followers_label') : t('following_label')}
+            </Text>
+
+            <FlatList
+              data={viewingFollowerType === 'followers' ? followersList : followingList}
+              keyExtractor={item => item.id}
+              ListEmptyComponent={() => (
+                <Text style={{ color: theme.colors.textSecondary, textAlign: 'center', marginVertical: 20 }}>
+                  {viewingFollowerType === 'followers' ? t('no_followers') : t('no_following')}
+                </Text>
+              )}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: theme.colors.background }}
+                  onPress={() => {
+                    setShowFollowersModal(false);
+                    handleOpenPartnerProfile(item.id);
+                  }}
+                >
+                  <View style={[styles.avatarCircle, { width: 40, height: 40, borderRadius: 20, marginRight: 12, overflow: 'hidden' }]}>
+                    {item.avatar_url ? (
+                      <Image source={{ uri: item.avatar_url }} style={styles.avatarImage} />
+                    ) : (
+                      <Text style={[styles.avatarLetter, { fontSize: 16 }]}>
+                        {item.full_name ? item.full_name[0].toUpperCase() : 'U'}
+                      </Text>
+                    )}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: theme.colors.textPrimary, fontSize: 16, fontWeight: '600' }}>{item.full_name}</Text>
+                    <Text style={{ color: theme.colors.primary, fontSize: 12 }}>🏆 {sanitizeLevel(item.nivel)}</Text>
+                  </View>
+                  <Text style={{ color: theme.colors.border, fontSize: 18 }}>›</Text>
+                </TouchableOpacity>
+              )}
+            />
           </View>
         </View>
       </Modal>
@@ -1390,5 +1632,20 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 1,
+  },
+  followersRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  followersText: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+  },
+  followersDot: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    marginHorizontal: 4,
   },
 });

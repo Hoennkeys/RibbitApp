@@ -328,5 +328,164 @@ export const dataService = {
 
     if (error) return false;
     return true;
+  },
+
+  // --- CHAT & REAL-TIME MESSAGING ---
+  getOrCreateChat: async (userId, recipientId) => {
+    const { data: existing, error } = await supabase
+      .from('chats')
+      .select('*')
+      .or(`and(user_id.eq.${userId},recipient_id.eq.${recipientId}),and(user_id.eq.${recipientId},recipient_id.eq.${userId})`)
+      .limit(1);
+
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+
+    if (existing && existing.length > 0) {
+      return existing[0];
+    }
+
+    const { data: created, error: createErr } = await supabase
+      .from('chats')
+      .insert([
+        { user_id: userId, recipient_id: recipientId, last_message: '', unread_count: 0 }
+      ])
+      .select()
+      .single();
+
+    if (createErr) throw createErr;
+    return created;
+  },
+
+  getChats: async (userId) => {
+    const { data, error } = await supabase
+      .from('chats')
+      .select(`
+        *,
+        user:user_id ( id, full_name, avatar_url, nivel ),
+        recipient:recipient_id ( id, full_name, avatar_url, nivel )
+      `)
+      .or(`user_id.eq.${userId},recipient_id.eq.${userId}`)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
+  },
+
+  getMessages: async (chatId) => {
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('chat_id', chatId)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    return data;
+  },
+
+  sendMessage: async (chatId, senderId, text) => {
+    const { data: msg, error: msgErr } = await supabase
+      .from('messages')
+      .insert([
+        { chat_id: chatId, sender_id: senderId, text: text, status: 'sent' }
+      ])
+      .select()
+      .single();
+
+    if (msgErr) throw msgErr;
+
+    const { error: chatErr } = await supabase
+      .from('chats')
+      .update({ last_message: text })
+      .eq('id', chatId);
+
+    if (chatErr) console.error('Error updating last message in chat:', chatErr);
+
+    return msg;
+  },
+
+  markMessagesAsDelivered: async (chatId, currentUserId) => {
+    const { error } = await supabase
+      .from('messages')
+      .update({ status: 'delivered' })
+      .eq('chat_id', chatId)
+      .neq('sender_id', currentUserId)
+      .eq('status', 'sent');
+
+    if (error) {
+      console.error('Error marking messages as delivered:', error);
+    }
+  },
+
+  // --- FOLLOWERS SYSTEM ---
+  followUser: async (userId, followerId) => {
+    const { data, error } = await supabase
+      .from('followers')
+      .insert([
+        { user_id: userId, follower_id: followerId }
+      ])
+      .select();
+
+    if (error) throw error;
+    return data;
+  },
+
+  unfollowUser: async (userId, followerId) => {
+    const { data, error } = await supabase
+      .from('followers')
+      .delete()
+      .eq('user_id', userId)
+      .eq('follower_id', followerId);
+
+    if (error) throw error;
+    return data;
+  },
+
+  getFollowers: async (userId) => {
+    const { data, error } = await supabase
+      .from('followers')
+      .select(`
+        id,
+        follower:follower_id ( id, full_name, avatar_url, nivel )
+      `)
+      .eq('user_id', userId);
+
+    if (error) throw error;
+    return data.map(item => item.follower).filter(Boolean);
+  },
+
+  getFollowing: async (userId) => {
+    const { data, error } = await supabase
+      .from('followers')
+      .select(`
+        id,
+        user:user_id ( id, full_name, avatar_url, nivel )
+      `)
+      .eq('follower_id', userId);
+
+    if (error) throw error;
+    return data.map(item => item.user).filter(Boolean);
+  },
+
+  checkIfFollowing: async (userId, followerId) => {
+    const { data, error } = await supabase
+      .from('followers')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('follower_id', followerId)
+      .limit(1);
+
+    if (error) return false;
+    return data && data.length > 0;
+  },
+
+  getAllProfiles: async () => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, full_name, avatar_url, nivel');
+
+    if (error) throw error;
+    return data;
   }
 };

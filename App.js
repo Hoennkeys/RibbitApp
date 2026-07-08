@@ -166,7 +166,7 @@ function AppContent() {
                 tabBarLabel: t('tab_profile'),
               }}
             >
-              {() => (
+              {({ navigation, route }) => (
                 <LifeListScreen
                   isGuest={isGuest}
                   user={session?.user}
@@ -174,6 +174,8 @@ function AppContent() {
                   onLogin={() => {
                     setIsGuest(false);
                   }}
+                  navigation={navigation}
+                  route={route}
                 />
               )}
             </Tab.Screen>

@@ -77,6 +77,7 @@ function AppContent() {
         <View style={{ flex: 1 }}>
           <Tab.Navigator
             screenOptions={({ route }) => ({
+              tabBarHideOnKeyboard: true,
               tabBarActiveTintColor: theme.colors.primary,
               tabBarInactiveTintColor: theme.colors.textSecondary,
               tabBarStyle: {

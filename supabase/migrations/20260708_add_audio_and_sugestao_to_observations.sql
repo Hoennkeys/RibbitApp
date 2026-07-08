@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- Ribbit Database Migration: Add audio_url/sugestao, define check_user_permissao (as text), and reset RLS policies
+-- Ribbit Database Migration: Add audio_url/sugestao, define check_user_permissao, reset RLS, and drop NOT NULL constraint
 -- Location: C:\Ribbit\RibbitApp\supabase\migrations\20260708_add_audio_and_sugestao_to_observations.sql
 -- ─────────────────────────────────────────────────────────────────────────────
 
@@ -26,10 +26,13 @@ ALTER TABLE public.observations
 ADD COLUMN IF NOT EXISTS audio_url text,
 ADD COLUMN IF NOT EXISTS sugestao text;
 
--- 3. Habilita RLS na tabela
+-- 3. Remove a restrição NOT NULL da coluna especie_id (para permitir sugestões pendentes sem espécie vinculada)
+ALTER TABLE public.observations ALTER COLUMN especie_id DROP NOT NULL;
+
+-- 4. Habilita RLS na tabela
 ALTER TABLE public.observations ENABLE ROW LEVEL SECURITY;
 
--- 4. Remove políticas de segurança antigas (inclusive as herdadas do nome 'sons')
+-- 5. Remove políticas de segurança antigas (inclusive as herdadas do nome 'sons')
 DROP POLICY IF EXISTS "sons_insert_auth" ON public.observations;
 DROP POLICY IF EXISTS "observations_insert_policy" ON public.observations;
 DROP POLICY IF EXISTS "sons_select_auth" ON public.observations;
@@ -39,7 +42,7 @@ DROP POLICY IF EXISTS "observations_update_policy" ON public.observations;
 DROP POLICY IF EXISTS "sons_delete_owner_admin" ON public.observations;
 DROP POLICY IF EXISTS "observations_delete_policy" ON public.observations;
 
--- 5. Cria políticas de segurança limpas e funcionais (sem depender de enums externos)
+-- 6. Cria políticas de segurança limpas e funcionais (sem depender de enums externos)
 CREATE POLICY "observations_insert_policy" ON public.observations
   FOR INSERT WITH CHECK (
     auth.uid() = usuario_id

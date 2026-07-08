@@ -19,7 +19,6 @@ import DashboardScreen from './src/screens/DashboardScreen';
 import ChatScreen from './src/screens/ChatScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import SignUpScreen from './src/screens/SignUpScreen';
-import FloatingActionButton from './src/components/FloatingActionButton';
 import { LanguageProvider, useLanguage } from './src/utils/i18n';
 
 const Tab = createBottomTabNavigator();
@@ -180,8 +179,6 @@ function AppContent() {
               )}
             </Tab.Screen>
           </Tab.Navigator>
-
-          <FloatingActionButton />
         </View>
       </NavigationContainer>
     </SafeAreaView>

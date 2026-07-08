@@ -220,6 +220,20 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
     }
   };
 
+  const handleOpenCardLink = async (url) => {
+    if (url) {
+      try {
+        const cleanUrl = url.trim().startsWith('http') ? url.trim() : `https://${url.trim()}`;
+        const supported = await Linking.canOpenURL(cleanUrl);
+        if (supported) {
+          await Linking.openURL(cleanUrl);
+        }
+      } catch (e) {
+        Alert.alert('Erro', 'Não foi possível abrir o link.');
+      }
+    }
+  };
+
   const handleImportLattes = () => {
     if (!lattesLink.trim()) {
       Alert.alert('Erro', 'Por favor, insira o link do seu Currículo Lattes.');
@@ -981,6 +995,28 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
                   <Text style={styles.cardBioText}>{bioText}</Text>
                 </View>
               ) : null}
+
+              {(lattesLink || linkedinLink) ? (
+                <View style={styles.cardSocialRow}>
+                  {lattesLink ? (
+                    <TouchableOpacity
+                      style={[styles.cardSocialButton, { backgroundColor: '#0071E3' }]}
+                      onPress={() => handleOpenCardLink(lattesLink)}
+                    >
+                      <Text style={styles.cardSocialButtonText}>🔗 Lattes</Text>
+                    </TouchableOpacity>
+                  ) : null}
+
+                  {linkedinLink ? (
+                    <TouchableOpacity
+                      style={[styles.cardSocialButton, { backgroundColor: '#0072b1' }]}
+                      onPress={() => handleOpenCardLink(linkedinLink)}
+                    >
+                      <Text style={styles.cardSocialButtonText}>💼 LinkedIn</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+              ) : null}
             </View>
           </View>
         </View>
@@ -1094,4 +1130,7 @@ const styles = StyleSheet.create({
   cardExperienceTitle: { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '600' },
   cardExperiencePeriod: { color: theme.colors.textSecondary, fontSize: 11, marginTop: 1 },
   cardExperienceDesc: { color: theme.colors.textSecondary, fontSize: 12, marginTop: 2 },
+  cardSocialRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, width: '100%' },
+  cardSocialButton: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center', marginHorizontal: 5, ...theme.shadows.soft },
+  cardSocialButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold' },
 });

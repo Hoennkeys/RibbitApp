@@ -89,3 +89,8 @@ create policy "Allow chat participants to insert messages" on public.messages
       where c.id = chat_id and (auth.uid() = c.user_id or auth.uid() = c.recipient_id)
     )
   );
+
+/* 5. Enable Realtime replication for followers, chats, and messages */
+alter publication supabase_realtime add table public.followers;
+alter publication supabase_realtime add table public.chats;
+alter publication supabase_realtime add table public.messages;

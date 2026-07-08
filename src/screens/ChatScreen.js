@@ -221,7 +221,13 @@ export default function ChatScreen({ navigation, route }) {
     const textToSend = messageText.trim();
     setMessageText('');
     try {
-      await dataService.sendMessage(selectedChat.id, currentUser.id, textToSend);
+      const sentMsg = await dataService.sendMessage(selectedChat.id, currentUser.id, textToSend);
+      if (sentMsg) {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === sentMsg.id)) return prev;
+          return [...prev, sentMsg];
+        });
+      }
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível enviar a mensagem.');
     }
@@ -497,7 +503,7 @@ export default function ChatScreen({ navigation, route }) {
           multiline
         />
         <TouchableOpacity style={styles.sendButton} onPress={handleSendMessage}>
-          <Text style={styles.sendIcon}>🚀</Text>
+          <Text style={styles.sendIcon}>➤</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>

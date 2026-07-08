@@ -462,12 +462,16 @@ export default function ChatScreen({ navigation, route }) {
   // DETAILED CHAT SCREEN
   const activePartner = getPartnerInfo(selectedChat);
 
+  // On Android, windowSoftInputMode="adjustResize" in AndroidManifest handles
+  // keyboard layout natively — using KeyboardAvoidingView causes double-shift.
+  // On iOS there is no such system behaviour, so padding is needed.
+  const ChatWrapper = Platform.OS === 'ios' ? KeyboardAvoidingView : View;
+  const chatWrapperProps = Platform.OS === 'ios'
+    ? { behavior: 'padding', keyboardVerticalOffset: 90 }
+    : {};
+
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-      style={styles.container}
-    >
+    <ChatWrapper style={styles.container} {...chatWrapperProps}>
       <View style={styles.chatHeader}>
         <TouchableOpacity onPress={() => setSelectedChat(null)} style={styles.backButton}>
           <Text style={styles.backButtonText}>‹ {t('back')}</Text>
@@ -542,7 +546,7 @@ export default function ChatScreen({ navigation, route }) {
           <Text style={styles.sendIcon}>➤</Text>
         </TouchableOpacity>
       </View>
-    </KeyboardAvoidingView>
+    </ChatWrapper>
   );
 }
 

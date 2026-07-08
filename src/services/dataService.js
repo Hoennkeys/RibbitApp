@@ -52,7 +52,7 @@ export const dataService = {
     return data;
   },
 
-  addObservation: async (especieId, localizacao, userId) => {
+  addObservation: async (especieId, localizacao, userId, sugestao = null, audioUrl = null) => {
     // Fetch profile bio metadata
     const { data: profile } = await supabase
       .from('profiles')
@@ -85,10 +85,10 @@ export const dataService = {
           especie_id: especieId,
           usuario_id: userId,
           localizacao: localizacao,
-          status_revisao: 'pendente',
+          sugestao: sugestao,
+          audio_url: audioUrl,
         }
-      ])
-      .select();
+      ]);
 
     if (error) throw error;
 
@@ -111,7 +111,7 @@ export const dataService = {
     }
 
     return {
-      observation: data[0],
+      observation: null,
       xpResult: xpAwardedResult
     };
   },
@@ -373,6 +373,57 @@ export const dataService = {
       return result.publicUrl;
     } catch (e) {
       console.error('Falha ao processar upload local:', e);
+      throw e;
+    }
+  },
+
+  uploadAudio: async (userId, localUri, base64 = null) => {
+    try {
+      const fileExt = localUri.split('.').pop() || 'mp3';
+      const fileName = `observation-audio-${userId}-${Date.now()}.${fileExt}`;
+      
+      let uploadBody;
+      if (base64) {
+        uploadBody = decode(base64);
+      } else {
+        let uploadUri = localUri;
+        if (Platform.OS === 'android' && !uploadUri.startsWith('file://') && !uploadUri.startsWith('content://') && !uploadUri.startsWith('http')) {
+          uploadUri = `file://${uploadUri}`;
+        }
+        
+        const response = await fetch(uploadUri);
+        const blob = await response.blob();
+        
+        const reader = new FileReader();
+        const base64Data = await new Promise((resolve, reject) => {
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+        
+        const base64Pure = base64Data.split(',')[1];
+        uploadBody = decode(base64Pure);
+      }
+
+      const { data, error } = await supabase.storage
+        .from('sons')
+        .upload(fileName, uploadBody, {
+          contentType: `audio/${fileExt === 'mp3' ? 'mpeg' : fileExt}`,
+          upsert: true
+        });
+
+      if (error) {
+        console.error('Erro no upload do áudio da observação:', error);
+        throw error;
+      }
+
+      const { data: result } = supabase.storage
+        .from('sons')
+        .getPublicUrl(fileName);
+
+      return result.publicUrl;
+    } catch (e) {
+      console.error('Falha ao processar upload de áudio local:', e);
       throw e;
     }
   },

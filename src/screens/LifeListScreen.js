@@ -109,6 +109,28 @@ const ProgressBar = ({ xp }) => {
 };
 
 export default function LifeListScreen({ isGuest, user, onLogin, onLogout, navigation, route }) {
+  const [playingAudioUrl, setPlayingAudioUrl] = useState(null);
+  const [audioPlaybackProgress, setAudioPlaybackProgress] = useState(0);
+
+  useEffect(() => {
+    let interval;
+    if (playingAudioUrl) {
+      setAudioPlaybackProgress(0);
+      interval = setInterval(() => {
+        setAudioPlaybackProgress(prev => {
+          if (prev >= 1) {
+            setPlayingAudioUrl(null);
+            return 0;
+          }
+          return prev + 0.1;
+        });
+      }, 500);
+    } else {
+      setAudioPlaybackProgress(0);
+    }
+    return () => clearInterval(interval);
+  }, [playingAudioUrl]);
+
   const { t, locale, changeLanguage } = useLanguage();
   const [profile, setProfile] = useState(null);
   const [observations, setObservations] = useState([]);
@@ -752,16 +774,66 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout, navig
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => {
             const dateFormatted = new Date(item.created_at).toLocaleDateString('pt-BR');
+            const isPendente = item.status_revisao === 'pendente';
+            const isRejeitado = item.status_revisao === 'rejeitado';
+            
+            // Show suggestion if pending, otherwise fallback to name popular
+            const popularName = isPendente && item.sugestao 
+              ? `Sugestão: ${item.sugestao}` 
+              : (item.species?.nome_popular || 'Espécie Não Identificada');
+            
+            const scientificName = isPendente 
+              ? 'Identificação Pendente' 
+              : (item.species?.nome_cientifico || 'Desconhecida');
+
+            const hasAudio = !!item.audio_url;
+            const isCurrentPlaying = playingAudioUrl === item.audio_url;
+
             return (
               <View style={styles.obsCard}>
                 <View style={styles.obsHeader}>
-                  <Text style={styles.obsPopular}>{item.species?.nome_popular || 'Espécie'}</Text>
-                  <View style={styles.statusBadge}>
-                    <Text style={styles.statusText}>{item.status_revisao?.toUpperCase()}</Text>
+                  <Text style={styles.obsPopular}>{popularName}</Text>
+                  <View style={[
+                    styles.statusBadge, 
+                    isPendente && { backgroundColor: 'rgba(255, 149, 0, 0.1)' },
+                    isRejeitado && { backgroundColor: 'rgba(255, 60, 48, 0.1)' }
+                  ]}>
+                    <Text style={[
+                      styles.statusText,
+                      isPendente && { color: '#FF9500' },
+                      isRejeitado && { color: '#FF3C30' }
+                    ]}>
+                      {item.status_revisao?.toUpperCase() || 'PENDENTE'}
+                    </Text>
                   </View>
                 </View>
-                <Text style={styles.obsScientific}>{item.species?.nome_cientifico}</Text>
+                <Text style={styles.obsScientific}>{scientificName}</Text>
                 <Text style={styles.obsInfo}>📍 {item.localizacao} • 📅 {dateFormatted}</Text>
+
+                {hasAudio && (
+                  <View style={styles.audioPlayerContainer}>
+                    <TouchableOpacity
+                      style={styles.playButtonMini}
+                      onPress={() => {
+                        if (isCurrentPlaying) {
+                          setPlayingAudioUrl(null);
+                        } else {
+                          setPlayingAudioUrl(item.audio_url);
+                        }
+                      }}
+                    >
+                      <Text style={styles.playIconMini}>
+                        {isCurrentPlaying ? '⏸️ Pausar' : '🔊 Ouvir Canto'}
+                      </Text>
+                    </TouchableOpacity>
+
+                    {isCurrentPlaying && (
+                      <View style={styles.miniProgressTrack}>
+                        <View style={[styles.miniProgressFill, { width: `${audioPlaybackProgress * 100}%` }]} />
+                      </View>
+                    )}
+                  </View>
+                )}
               </View>
             );
           }}
@@ -1665,5 +1737,39 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: theme.colors.textSecondary,
     marginHorizontal: 4,
+  },
+  audioPlayerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 8,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  playButtonMini: {
+    backgroundColor: theme.colors.primary,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  playIconMini: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  miniProgressTrack: {
+    flex: 1,
+    height: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 3,
+    marginLeft: 12,
+    overflow: 'hidden',
+  },
+  miniProgressFill: {
+    height: '100%',
+    backgroundColor: theme.colors.primary,
+    borderRadius: 3,
   },
 });

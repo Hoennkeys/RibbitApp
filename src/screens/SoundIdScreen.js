@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 24,
-    paddingTop: 60, // Increased top padding for vertical balance
+    paddingTop: 24,
     paddingBottom: 180,
   },
   header: {

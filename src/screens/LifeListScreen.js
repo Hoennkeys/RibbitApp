@@ -57,6 +57,7 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
   const [showProfileCard, setShowProfileCard] = useState(false);
   const [savingBio, setSavingBio] = useState(false);
   const [savingAcademic, setSavingAcademic] = useState(false);
+  const [editingExpId, setEditingExpId] = useState(null);
 
   // States para Nova Experiência
   const [newExpTitle, setNewExpTitle] = useState('');
@@ -174,7 +175,7 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
     }
   };
 
-  const handleSaveExperiences = async (updatedExps, updatedLattes = lattesLink, updatedLinkedin = linkedinLink) => {
+  const handleSaveExperiences = async (updatedExps, updatedLattes = lattesLink, updatedLinkedin = linkedinLink, showSuccessAlert = false) => {
     setSavingAcademic(true);
     try {
       const bioPayload = JSON.stringify({
@@ -187,6 +188,9 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
       });
       await dataService.updateBio(user.id, bioPayload);
       await loadProfileAndData();
+      if (showSuccessAlert) {
+        Alert.alert('Sucesso', t('success_save_academic'));
+      }
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível salvar as informações.');
     } finally {
@@ -297,14 +301,32 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
       Alert.alert('Erro', 'Por favor, preencha pelo menos Título e Instituição.');
       return;
     }
-    const newExp = {
-      id: Date.now().toString(),
-      title: newExpTitle,
-      institution: newExpInst,
-      description: newExpDesc,
-      period: newExpPeriod
-    };
-    const updated = [...experiences, newExp];
+    
+    let updated;
+    if (editingExpId) {
+      updated = experiences.map(exp => {
+        if (exp.id === editingExpId) {
+          return {
+            ...exp,
+            title: newExpTitle,
+            institution: newExpInst,
+            description: newExpDesc,
+            period: newExpPeriod
+          };
+        }
+        return exp;
+      });
+      setEditingExpId(null);
+    } else {
+      const newExp = {
+        id: Date.now().toString(),
+        title: newExpTitle,
+        institution: newExpInst,
+        description: newExpDesc,
+        period: newExpPeriod
+      };
+      updated = [...experiences, newExp];
+    }
     setExperiences(updated);
     
     // Clear inputs
@@ -316,7 +338,26 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
     handleSaveExperiences(updated);
   };
 
+  const handleStartEditExperience = (exp) => {
+    setEditingExpId(exp.id);
+    setNewExpTitle(exp.title || '');
+    setNewExpInst(exp.institution || '');
+    setNewExpDesc(exp.description || '');
+    setNewExpPeriod(exp.period || '');
+  };
+
+  const handleCancelEditExperience = () => {
+    setEditingExpId(null);
+    setNewExpTitle('');
+    setNewExpInst('');
+    setNewExpDesc('');
+    setNewExpPeriod('');
+  };
+
   const handleDeleteExperience = (expId) => {
+    if (editingExpId === expId) {
+      handleCancelEditExperience();
+    }
     const updated = experiences.filter(exp => exp.id !== expId);
     setExperiences(updated);
     handleSaveExperiences(updated);
@@ -662,17 +703,6 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>{t('institution_label')}</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder={t('institution_placeholder')}
-              placeholderTextColor={theme.colors.textSecondary}
-              value={instituicaoText}
-              onChangeText={setInstituicaoText}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>{t('status_label')}</Text>
             <View style={styles.statusRow}>
               {STATUS_PRESETS.map((item) => (
@@ -751,7 +781,7 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
 
             <TouchableOpacity
               style={styles.saveLinksButton}
-              onPress={() => handleSaveExperiences(experiences, lattesLink, linkedinLink)}
+              onPress={() => handleSaveExperiences(experiences, lattesLink, linkedinLink, true)}
               disabled={savingAcademic}
             >
               {savingAcademic ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.saveLinksButtonText}>{t('save_links_btn')}</Text>}
@@ -759,7 +789,9 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
           </View>
 
           <View style={[styles.experienceFormCard, { marginTop: 20 }]}>
-            <Text style={styles.experienceFormTitle}>{t('add_experience')}</Text>
+            <Text style={styles.experienceFormTitle}>
+              {editingExpId ? t('edit_experience') : t('add_experience')}
+            </Text>
             
             <TextInput
               style={styles.experienceInput}
@@ -794,9 +826,28 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
               onChangeText={setNewExpDesc}
             />
 
-            <TouchableOpacity style={styles.experienceAddButton} onPress={handleAddExperience} disabled={savingAcademic}>
-              {savingAcademic ? <ActivityIndicator color="#FFF" /> : <Text style={styles.experienceAddButtonText}>{t('add_experience')}</Text>}
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <TouchableOpacity
+                style={[styles.experienceAddButton, { flex: 1, marginRight: editingExpId ? 8 : 0 }]}
+                onPress={handleAddExperience}
+                disabled={savingAcademic}
+              >
+                {savingAcademic ? <ActivityIndicator color="#FFF" /> : (
+                  <Text style={styles.experienceAddButtonText}>
+                    {editingExpId ? t('save_changes') : t('add_experience')}
+                  </Text>
+                )}
+              </TouchableOpacity>
+
+              {editingExpId && (
+                <TouchableOpacity
+                  style={[styles.experienceCancelButton, { flex: 1, marginLeft: 8 }]}
+                  onPress={handleCancelEditExperience}
+                >
+                  <Text style={styles.experienceCancelButtonText}>{t('cancel')}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
 
           <View style={{ marginTop: 24, paddingBottom: 60 }}>
@@ -813,9 +864,14 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
                       <Text style={styles.experienceCardInstitution}>{exp.institution}</Text>
                       {exp.period ? <Text style={styles.experienceCardPeriod}>{exp.period}</Text> : null}
                     </View>
-                    <TouchableOpacity style={styles.experienceDeleteButton} onPress={() => handleDeleteExperience(exp.id)}>
-                      <Text style={styles.experienceDeleteButtonText}>✕</Text>
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <TouchableOpacity style={styles.experienceEditButton} onPress={() => handleStartEditExperience(exp)}>
+                        <Text style={styles.experienceEditButtonText}>✏️</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.experienceDeleteButton} onPress={() => handleDeleteExperience(exp.id)}>
+                        <Text style={styles.experienceDeleteButtonText}>✕</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                   {exp.description ? <Text style={styles.experienceCardDesc}>{exp.description}</Text> : null}
                 </View>
@@ -1028,7 +1084,7 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   centered: { justifyContent: 'center', alignItems: 'center' },
-  profileHeader: { backgroundColor: theme.colors.surface, paddingHorizontal: 24, paddingTop: 64, paddingBottom: 32, ...theme.shadows.soft },
+  profileHeader: { backgroundColor: theme.colors.surface, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 32, ...theme.shadows.soft },
   profileMain: { flexDirection: 'row', alignItems: 'center' },
   avatarCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center', marginRight: 16, overflow: 'hidden' },
   avatarImage: { width: '100%', height: '100%' },
@@ -1048,7 +1104,7 @@ const styles = StyleSheet.create({
   menuIconImage: { width: 22, height: 22, marginRight: 12 },
   menuText: { flex: 1, color: theme.colors.textPrimary, fontSize: 17, fontWeight: '400' },
   menuArrow: { color: theme.colors.border, fontSize: 20 },
-  subHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingTop: 64, paddingBottom: 16, backgroundColor: theme.colors.surface },
+  subHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingTop: 16, paddingBottom: 16, backgroundColor: theme.colors.surface },
   backButton: { marginRight: 16 },
   backButtonText: { color: theme.colors.accent, fontSize: 17, fontWeight: '500' },
   subTitle: { color: theme.colors.textPrimary, fontSize: 20, fontWeight: '700' },
@@ -1125,6 +1181,10 @@ const styles = StyleSheet.create({
   experienceCardDesc: { color: theme.colors.textSecondary, fontSize: 13, lineHeight: 18, marginTop: 10, borderTopWidth: 1, borderTopColor: theme.colors.background, paddingTop: 8 },
   experienceDeleteButton: { padding: 4 },
   experienceDeleteButtonText: { color: '#FF3B30', fontSize: 16, fontWeight: 'bold' },
+  experienceEditButton: { padding: 4, marginRight: 10 },
+  experienceEditButtonText: { fontSize: 16 },
+  experienceCancelButton: { backgroundColor: '#8E8E93', borderRadius: 8, padding: 12, alignItems: 'center' },
+  experienceCancelButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
   cardExperiencesSection: { marginTop: 16, borderBottomWidth: 1, borderBottomColor: theme.colors.background, paddingBottom: 16 },
   cardExperienceItem: { marginTop: 10 },
   cardExperienceTitle: { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '600' },

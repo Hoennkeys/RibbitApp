@@ -147,6 +147,10 @@ const translations = {
     import_btn: 'Importar',
     save_links_btn: 'Salvar Links',
     connect_curriculum_title: 'Conectar Currículos',
+    edit_experience: 'Editar Experiência',
+    save_changes: 'Salvar Alterações',
+    cancel: 'Cancelar',
+    success_save_academic: 'Informações acadêmicas salvas com sucesso!',
   },
   en: {
     // Tab bar
@@ -294,6 +298,10 @@ const translations = {
     import_btn: 'Import',
     save_links_btn: 'Save Links',
     connect_curriculum_title: 'Connect Curriculums',
+    edit_experience: 'Edit Experience',
+    save_changes: 'Save Changes',
+    cancel: 'Cancel',
+    success_save_academic: 'Academic info saved successfully!',
   },
   es: {
     // Tab bar
@@ -441,6 +449,10 @@ const translations = {
     import_btn: 'Importar',
     save_links_btn: 'Guardar Enlaces',
     connect_curriculum_title: 'Conectar Currículos',
+    edit_experience: 'Editar Experiencia',
+    save_changes: 'Guardar Cambios',
+    cancel: 'Cancelar',
+    success_save_academic: '¡Información académica guardada con éxito!',
   },
   fr: {
     // Tab bar
@@ -588,6 +600,10 @@ const translations = {
     import_btn: 'Importer',
     save_links_btn: 'Enregistrer les liens',
     connect_curriculum_title: 'Connecter les CV',
+    edit_experience: "Modifier l'expérience",
+    save_changes: 'Enregistrer les modifications',
+    cancel: 'Annuler',
+    success_save_academic: 'Informations académiques enregistrées avec succès!',
   },
   it: {
     // Tab bar
@@ -735,6 +751,10 @@ const translations = {
     import_btn: 'Importa',
     save_links_btn: 'Salva Link',
     connect_curriculum_title: 'Collega CV',
+    edit_experience: 'Modifica Esperienza',
+    save_changes: 'Salva Modifiche',
+    cancel: 'Annulla',
+    success_save_academic: 'Informazioni accademiche salvate con successo!',
   },
   zh: {
     // Tab bar
@@ -882,6 +902,10 @@ const translations = {
     import_btn: '导入',
     save_links_btn: '保存链接',
     connect_curriculum_title: '连接简历',
+    edit_experience: '编辑经历',
+    save_changes: '保存更改',
+    cancel: '取消',
+    success_save_academic: '学术信息保存成功！',
   },
   ko: {
     // Tab bar
@@ -1029,6 +1053,10 @@ const translations = {
     import_btn: '가져오기',
     save_links_btn: '링크 저장',
     connect_curriculum_title: '이력서 연결',
+    edit_experience: '경력 수정',
+    save_changes: '변경사항 저장',
+    cancel: '취소',
+    success_save_academic: '학술 정보가 성공적으로 저장되었습니다!',
   }
 };
 

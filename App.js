@@ -4,7 +4,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import React, { useState, useEffect } from 'react';
-import { SafeAreaView, StatusBar, StyleSheet, Text, View, Image } from 'react-native';
+import { StatusBar, StyleSheet, Text, View, Image } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import supabase from './src/services/supabaseClient';
@@ -187,9 +188,11 @@ function AppContent() {
 
 export default function App() {
   return (
-    <LanguageProvider>
-      <AppContent />
-    </LanguageProvider>
+    <SafeAreaProvider>
+      <LanguageProvider>
+        <AppContent />
+      </LanguageProvider>
+    </SafeAreaProvider>
   );
 }
 

@@ -87,7 +87,7 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
-  content: { padding: 24, paddingTop: 60 },
+  content: { padding: 24, paddingTop: 24 },
   header: { alignItems: 'center', marginBottom: 40 },
   title: { fontSize: 34, fontWeight: '800', color: theme.colors.textPrimary, textAlign: 'center', letterSpacing: -0.5 },
   subtitle: { fontSize: 16, color: theme.colors.textSecondary, marginTop: 8, textAlign: 'center' },

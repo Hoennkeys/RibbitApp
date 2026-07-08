@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 24,
-    paddingTop: 60, // Increased top padding for vertical balance
+    paddingTop: 24,
     paddingBottom: 24,
     alignItems: 'center', // Centralized header
   },

@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   keyboardContainer: { flex: 1, backgroundColor: theme.colors.background },
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  content: { padding: 24, paddingTop: 64, paddingBottom: 100 },
+  content: { padding: 24, paddingTop: 24, paddingBottom: 100 },
   errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
   errorText: { color: theme.colors.textPrimary, fontSize: 16, marginBottom: 20 },
   backButton: { marginBottom: 24 },

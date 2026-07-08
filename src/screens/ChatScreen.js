@@ -132,7 +132,7 @@ export default function ChatScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
-  header: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 24, alignItems: 'center' },
+  header: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 24, alignItems: 'center' },
   title: { fontSize: 34, fontWeight: '800', color: theme.colors.textPrimary, textAlign: 'center' },
   subtitle: { fontSize: 16, color: theme.colors.textSecondary, marginTop: 8, textAlign: 'center' },
   listContent: { paddingHorizontal: 20 },
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   lastMessage: { fontSize: 14, color: theme.colors.textSecondary, flex: 1, marginRight: 8 },
   unreadBadge: { backgroundColor: theme.colors.primary, borderRadius: 10, minWidth: 20, height: 20, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 6 },
   unreadText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
-  chatHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 60, paddingBottom: 16, backgroundColor: theme.colors.surface, ...theme.shadows.soft },
+  chatHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, backgroundColor: theme.colors.surface, ...theme.shadows.soft },
   backButton: { marginRight: 16 },
   backButtonText: { color: theme.colors.accent, fontSize: 17, fontWeight: '500' },
   chatTitle: { fontSize: 18, fontWeight: '700', color: theme.colors.textPrimary },

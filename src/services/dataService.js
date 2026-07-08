@@ -53,6 +53,31 @@ export const dataService = {
   },
 
   addObservation: async (especieId, localizacao, userId) => {
+    // Fetch profile bio metadata
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('bio')
+      .eq('id', userId)
+      .single();
+      
+    let bioObj = {};
+    try {
+      if (profile && profile.bio) {
+        bioObj = JSON.parse(profile.bio);
+      }
+    } catch (e) {}
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const metadata = bioObj.metadata || {};
+    
+    // Reset limits if new day
+    if (metadata.lastActiveDate !== todayStr) {
+      metadata.lastActiveDate = todayStr;
+      metadata.dailyCommentsCount = 0;
+      metadata.dailyObservationsCount = 0;
+    }
+
+    // Insert observation
     const { data, error } = await supabase
       .from('observations')
       .insert([
@@ -67,10 +92,28 @@ export const dataService = {
 
     if (error) throw error;
 
-    // Ganha XP ao enviar
-    await dataService.updateXp(userId, 50);
+    let xpAwardedResult = null;
+    // Award XP if under limit
+    if ((metadata.dailyObservationsCount || 0) < 10) {
+      metadata.dailyObservationsCount = (metadata.dailyObservationsCount || 0) + 1;
+      bioObj.metadata = metadata;
+      
+      // Update bio metadata
+      await supabase
+        .from('profiles')
+        .update({ bio: JSON.stringify(bioObj) })
+        .eq('id', userId);
+        
+      // Award XP
+      xpAwardedResult = await dataService.updateXp(userId, 50);
+    } else {
+      xpAwardedResult = { limitReached: true };
+    }
 
-    return data[0];
+    return {
+      observation: data[0],
+      xpResult: xpAwardedResult
+    };
   },
 
   // --- COMENTÁRIOS ---
@@ -86,6 +129,31 @@ export const dataService = {
   },
 
   addComment: async (speciesId, userId, userName, text) => {
+    // Fetch profile bio metadata
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('bio')
+      .eq('id', userId)
+      .single();
+      
+    let bioObj = {};
+    try {
+      if (profile && profile.bio) {
+        bioObj = JSON.parse(profile.bio);
+      }
+    } catch (e) {}
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const metadata = bioObj.metadata || {};
+    
+    // Reset limits if new day
+    if (metadata.lastActiveDate !== todayStr) {
+      metadata.lastActiveDate = todayStr;
+      metadata.dailyCommentsCount = 0;
+      metadata.dailyObservationsCount = 0;
+    }
+
+    // Insert comment
     const { data, error } = await supabase
       .from('comments')
       .insert([
@@ -99,7 +167,29 @@ export const dataService = {
       .select();
 
     if (error) throw error;
-    return data[0];
+
+    let xpAwardedResult = null;
+    // Award XP if under limit
+    if ((metadata.dailyCommentsCount || 0) < 5) {
+      metadata.dailyCommentsCount = (metadata.dailyCommentsCount || 0) + 1;
+      bioObj.metadata = metadata;
+      
+      // Update bio metadata
+      await supabase
+        .from('profiles')
+        .update({ bio: JSON.stringify(bioObj) })
+        .eq('id', userId);
+        
+      // Award XP
+      xpAwardedResult = await dataService.updateXp(userId, 20);
+    } else {
+      xpAwardedResult = { limitReached: true };
+    }
+
+    return {
+      comment: data[0],
+      xpResult: xpAwardedResult
+    };
   },
 
   // --- PERFIL / GAMIFICAÇÃO ---
@@ -125,12 +215,14 @@ export const dataService = {
       .single();
 
     const currentXp = profile?.xp || 0;
-    const newXp = currentXp + xpToAdd;
+    const newXp = Math.max(0, currentXp + xpToAdd);
 
-    // Lógica simples de nível
-    let newNivel = profile?.nivel || 'Coaxador Bronze';
-    if (newXp >= 500) newNivel = 'Coaxador Ouro';
-    else if (newXp >= 200) newNivel = 'Coaxador Prata';
+    // Lógica de 5 níveis
+    let newNivel = 'Bronze';
+    if (newXp >= 2000) newNivel = 'Diamante';
+    else if (newXp >= 1000) newNivel = 'Platina';
+    else if (newXp >= 500) newNivel = 'Ouro';
+    else if (newXp >= 200) newNivel = 'Prata';
 
     const { data, error } = await supabase
       .from('profiles')
@@ -138,7 +230,14 @@ export const dataService = {
       .eq('id', userId);
 
     if (error) throw error;
-    return data;
+    
+    return {
+      success: true,
+      xp: newXp,
+      nivel: newNivel,
+      prevLevel: profile?.nivel || 'Bronze',
+      xpAdded: xpToAdd
+    };
   },
 
   updatePassword: async (newPassword) => {
@@ -160,13 +259,29 @@ export const dataService = {
   },
 
   updateAvatar: async (userId, avatarUrl) => {
+    // Check if user already had an avatar
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('avatar_url')
+      .eq('id', userId)
+      .single();
+
     const { data, error } = await supabase
       .from('profiles')
       .update({ avatar_url: avatarUrl })
       .eq('id', userId);
 
     if (error) throw error;
-    return data;
+
+    let xpAwardedResult = null;
+    if (profile && !profile.avatar_url && avatarUrl) {
+      xpAwardedResult = await dataService.updateXp(userId, 50);
+    }
+
+    return {
+      data,
+      xpResult: xpAwardedResult
+    };
   },
 
   updateBio: async (userId, bioText) => {

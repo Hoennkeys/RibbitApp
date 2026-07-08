@@ -28,6 +28,79 @@ import { dataService } from '../services/dataService';
 import { theme } from '../utils/theme';
 import { useLanguage } from '../utils/i18n';
 
+const getAttribution = (user, profile) => {
+  if (!user) return 'Explorer';
+  const email = (user.email || '').toLowerCase();
+  const name = (profile?.full_name || user.user_metadata?.full_name || '').toLowerCase();
+
+  if (email.includes('admin') || name === 'lucas' || email === 'lucas@ribbit.com') {
+    return 'Frogger';
+  }
+  if (email.includes('founder') || email.includes('creator') || email === 'founder@ribbit.com') {
+    return 'Founder';
+  }
+  if (user.created_at) {
+    const signupDate = new Date(user.created_at);
+    const alphaCutoff = new Date('2026-07-15T00:00:00Z');
+    const betaCutoff = new Date('2026-09-01T00:00:00Z');
+
+    if (signupDate < alphaCutoff) {
+      return 'Alpha';
+    } else if (signupDate < betaCutoff) {
+      return 'Beta';
+    }
+  }
+  return 'Explorer';
+};
+
+const getXpProgressInfo = (xp) => {
+  let currentTierMin = 0;
+  let nextTierMin = 200;
+  let currentTierName = 'Bronze';
+  
+  if (xp >= 2000) {
+    currentTierMin = 2000;
+    nextTierMin = 2000;
+    currentTierName = 'Diamante';
+  } else if (xp >= 1000) {
+    currentTierMin = 1000;
+    nextTierMin = 2000;
+    currentTierName = 'Platina';
+  } else if (xp >= 500) {
+    currentTierMin = 500;
+    nextTierMin = 1000;
+    currentTierName = 'Ouro';
+  } else if (xp >= 200) {
+    currentTierMin = 200;
+    nextTierMin = 500;
+    currentTierName = 'Prata';
+  }
+  
+  const denominator = nextTierMin - currentTierMin;
+  const progress = denominator > 0 ? (xp - currentTierMin) / denominator : 1;
+  
+  return {
+    progress: Math.min(1, Math.max(0, progress)),
+    currentTierMin,
+    nextTierMin,
+    currentTierName
+  };
+};
+
+const ProgressBar = ({ xp }) => {
+  const { t } = useLanguage();
+  const { progress, nextTierMin } = getXpProgressInfo(xp);
+  
+  return (
+    <View style={styles.progressBarContainer}>
+      <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
+      <Text style={styles.progressBarText}>
+        {t('xp_progress').replace('{current}', xp.toString()).replace('{next}', nextTierMin === xp ? 'MAX' : nextTierMin.toString())}
+      </Text>
+    </View>
+  );
+};
+
 export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
   const { t, locale, changeLanguage } = useLanguage();
   const [profile, setProfile] = useState(null);
@@ -59,6 +132,10 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
   const [savingAcademic, setSavingAcademic] = useState(false);
   const [editingExpId, setEditingExpId] = useState(null);
 
+  // Level Up Modal States
+  const [showLevelUpModal, setShowLevelUpModal] = useState(false);
+  const [levelUpName, setLevelUpName] = useState('');
+
   // States para Nova Experiência
   const [newExpTitle, setNewExpTitle] = useState('');
   const [newExpInst, setNewExpInst] = useState('');
@@ -77,6 +154,7 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
     } else {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isGuest, user]);
 
   // Reseta para o menu principal ao focar a aba Perfil
@@ -104,11 +182,22 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
     return () => backHandler.remove();
   }, [currentView]);
 
-  const loadProfileAndData = async () => {
+  const loadProfileAndData = async (checkLevelUp = false) => {
     setLoading(true);
     try {
       const profileData = await dataService.getProfile(user.id);
       if (profileData) {
+        // Check for level up
+        if (checkLevelUp && profile && profile.nivel && profileData.nivel && profile.nivel !== profileData.nivel) {
+          const levelOrder = ['Bronze', 'Prata', 'Ouro', 'Platina', 'Diamante'];
+          const prevIndex = levelOrder.indexOf(profile.nivel);
+          const newIndex = levelOrder.indexOf(profileData.nivel);
+          if (newIndex > prevIndex) {
+            setLevelUpName(profileData.nivel);
+            setShowLevelUpModal(true);
+          }
+        }
+        
         setProfile(profileData);
         if (profileData.avatar_url) setAvatarUrl(profileData.avatar_url);
         
@@ -141,7 +230,7 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
         setProfile({
           full_name: user.user_metadata?.full_name || user.email.split('@')[0],
           xp: 0,
-          nivel: 'Novo Observador'
+          nivel: 'Bronze'
         });
       }
       const obsData = await dataService.getObservations(user.id);
@@ -166,7 +255,7 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
       });
       await dataService.updateBio(user.id, bioPayload);
       Alert.alert('Sucesso', 'Alterações salvas!');
-      await loadProfileAndData();
+      await loadProfileAndData(true);
       setCurrentView('menu');
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível salvar as alterações.');
@@ -178,6 +267,37 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
   const handleSaveExperiences = async (updatedExps, updatedLattes = lattesLink, updatedLinkedin = linkedinLink, showSuccessAlert = false) => {
     setSavingAcademic(true);
     try {
+      let prevBio = null;
+      try {
+        if (profile && profile.bio) {
+          prevBio = JSON.parse(profile.bio);
+        }
+      } catch (e) {}
+
+      let xpChange = 0;
+      
+      const prevLattes = prevBio?.lattesLink || '';
+      const prevLinkedin = prevBio?.linkedinLink || '';
+      const prevInst = prevBio?.instituicaoText || '';
+      
+      if (!prevLattes && updatedLattes) xpChange += 100;
+      else if (prevLattes && !updatedLattes) xpChange -= 100;
+      
+      if (!prevLinkedin && updatedLinkedin) xpChange += 100;
+      else if (prevLinkedin && !updatedLinkedin) xpChange -= 100;
+      
+      if (!prevInst && instituicaoText) xpChange += 50;
+      else if (prevInst && !instituicaoText) xpChange -= 50;
+
+      const prevExps = prevBio?.experiences || [];
+      const expCountDiff = updatedExps.length - prevExps.length;
+      xpChange += expCountDiff * 150;
+
+      let xpResult = null;
+      if (xpChange !== 0) {
+        xpResult = await dataService.updateXp(user.id, xpChange);
+      }
+
       const bioPayload = JSON.stringify({
         bioText,
         statusText,
@@ -187,9 +307,14 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
         linkedinLink: updatedLinkedin
       });
       await dataService.updateBio(user.id, bioPayload);
-      await loadProfileAndData();
+      await loadProfileAndData(true);
+
       if (showSuccessAlert) {
         Alert.alert('Sucesso', t('success_save_academic'));
+      }
+
+      if (xpResult && xpResult.xpAdded !== 0) {
+        Alert.alert('XP!', t('earned_xp').replace('{xp}', xpResult.xpAdded.toString()));
       }
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível salvar as informações.');
@@ -418,9 +543,12 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
     }
     setUpdatingPhoto(true);
     try {
-      await dataService.updateAvatar(user.id, avatarUrl);
+      const res = await dataService.updateAvatar(user.id, avatarUrl);
       Alert.alert('Sucesso', 'Foto atualizada!');
-      await loadProfileAndData();
+      await loadProfileAndData(true);
+      if (res && res.xpResult && res.xpResult.xpAdded > 0) {
+        Alert.alert('XP!', t('earned_xp').replace('{xp}', res.xpResult.xpAdded.toString()));
+      }
       setCurrentView('menu');
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível atualizar a foto.');
@@ -438,9 +566,12 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
     setUpdatingPhoto(true);
     try {
       const publicUrl = await dataService.uploadAvatar(user.id, imageFile);
-      await dataService.updateAvatar(user.id, publicUrl);
+      const res = await dataService.updateAvatar(user.id, publicUrl);
       setAvatarUrl(publicUrl);
-      await loadProfileAndData();
+      await loadProfileAndData(true);
+      if (res && res.xpResult && res.xpResult.xpAdded > 0) {
+        Alert.alert('XP!', t('earned_xp').replace('{xp}', res.xpResult.xpAdded.toString()));
+      }
       setCurrentView('menu');
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível fazer o upload.');
@@ -901,7 +1032,10 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
             </TouchableOpacity>
             <View style={styles.profileDetails}>
               <Text style={styles.profileName}>{profile?.full_name || t('tab_profile')}</Text>
-              <Text style={styles.profileLevel}>🏆 {profile?.nivel === 'Iniciante' ? t('beginner') : profile?.nivel || t('beginner')}</Text>
+              <Text style={styles.profileLevel}>
+                🏆 {profile?.nivel || 'Bronze'} • {getAttribution(user, profile)}
+              </Text>
+              <ProgressBar xp={profile?.xp || 0} />
               <Text style={styles.xpText}>{profile?.xp || 0} {t('xp_accumulated')}</Text>
             </View>
             <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
@@ -1023,13 +1157,16 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
               <View style={styles.cardDetailRow}>
                 <Text style={styles.cardDetailLabel}>🏆 {t('level_label')}</Text>
                 <Text style={styles.cardDetailValue}>
-                  {profile?.nivel === 'Iniciante' ? t('beginner') : profile?.nivel || t('beginner')}
+                  {profile?.nivel || 'Bronze'} • {getAttribution(user, profile)}
                 </Text>
               </View>
 
-              <View style={styles.cardDetailRow}>
-                <Text style={styles.cardDetailLabel}>⚡ {t('xp_label')}</Text>
-                <Text style={styles.cardDetailValue}>{profile?.xp || 0} XP</Text>
+              <View style={[styles.cardDetailRow, { flexDirection: 'column', alignItems: 'stretch' }]}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <Text style={styles.cardDetailLabel}>⚡ {t('xp_label')}</Text>
+                  <Text style={styles.cardDetailValue}>{profile?.xp || 0} XP</Text>
+                </View>
+                <ProgressBar xp={profile?.xp || 0} />
               </View>
 
               {experiences.length > 0 ? (
@@ -1074,6 +1211,32 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
                 </View>
               ) : null}
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showLevelUpModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowLevelUpModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.profileCard, { alignItems: 'center', paddingVertical: 32 }]}>
+            <Text style={{ fontSize: 64, marginBottom: 16 }}>🐸🎉</Text>
+            <Text style={[styles.cardName, { color: theme.colors.primary, fontSize: 24 }]}>
+              {t('level_up_title')}
+            </Text>
+            <Text style={[styles.cardDetailValue, { fontSize: 16, marginTop: 12, textAlign: 'center', color: theme.colors.textPrimary }]}>
+              {t('level_up_desc').replace('{level}', levelUpName)}
+            </Text>
+            
+            <TouchableOpacity
+              style={[styles.saveButton, { marginTop: 32, width: '80%' }]}
+              onPress={() => setShowLevelUpModal(false)}
+            >
+              <Text style={styles.saveButtonText}>{t('close')}</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -1193,4 +1356,29 @@ const styles = StyleSheet.create({
   cardSocialRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, width: '100%' },
   cardSocialButton: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center', marginHorizontal: 5, ...theme.shadows.soft },
   cardSocialButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold' },
+  progressBarContainer: {
+    height: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 7,
+    overflow: 'hidden',
+    marginTop: 8,
+    width: '100%',
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: theme.colors.primary,
+    borderRadius: 7,
+  },
+  progressBarText: {
+    position: 'absolute',
+    alignSelf: 'center',
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
+  },
 });

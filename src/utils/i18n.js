@@ -151,6 +151,11 @@ const translations = {
     save_changes: 'Salvar Alterações',
     cancel: 'Cancelar',
     success_save_academic: 'Informações acadêmicas salvas com sucesso!',
+    earned_xp: 'Você ganhou +{xp} XP!',
+    level_up_title: 'Parabéns! Subiu de Nível!',
+    level_up_desc: 'Você agora é nível {level}!',
+    xp_progress: '{current} de {next} XP',
+    daily_limit_reached: 'Limite diário de XP atingido para esta ação.',
   },
   en: {
     // Tab bar
@@ -302,6 +307,11 @@ const translations = {
     save_changes: 'Save Changes',
     cancel: 'Cancel',
     success_save_academic: 'Academic info saved successfully!',
+    earned_xp: 'You earned +{xp} XP!',
+    level_up_title: 'Level Up!',
+    level_up_desc: 'You are now level {level}!',
+    xp_progress: '{current} of {next} XP',
+    daily_limit_reached: 'Daily XP limit reached for this action.',
   },
   es: {
     // Tab bar
@@ -453,6 +463,11 @@ const translations = {
     save_changes: 'Guardar Cambios',
     cancel: 'Cancelar',
     success_save_academic: '¡Información académica guardada con éxito!',
+    earned_xp: '¡Ganaste +{xp} XP!',
+    level_up_title: '¡Subiste de Nivel!',
+    level_up_desc: '¡Ahora eres nivel {level}!',
+    xp_progress: '{current} de {next} XP',
+    daily_limit_reached: 'Límite diario de XP alcanzado para esta acción.',
   },
   fr: {
     // Tab bar
@@ -604,6 +619,11 @@ const translations = {
     save_changes: 'Enregistrer les modifications',
     cancel: 'Annuler',
     success_save_academic: 'Informations académiques enregistrées avec succès!',
+    earned_xp: 'Vous avez gagné +{xp} XP!',
+    level_up_title: 'Niveau supérieur!',
+    level_up_desc: 'Vous êtes maintenant niveau {level}!',
+    xp_progress: '{current} sur {next} XP',
+    daily_limit_reached: 'Limite quotidienne d\'XP atteinte pour cette action.',
   },
   it: {
     // Tab bar
@@ -755,6 +775,11 @@ const translations = {
     save_changes: 'Salva Modifiche',
     cancel: 'Annulla',
     success_save_academic: 'Informazioni accademiche salvate con successo!',
+    earned_xp: 'Hai guadagnato +{xp} XP!',
+    level_up_title: 'Livello Superiore!',
+    level_up_desc: 'Ora sei al livello {level}!',
+    xp_progress: '{current} di {next} XP',
+    daily_limit_reached: 'Limite giornaliero di XP raggiunto per questa azione.',
   },
   zh: {
     // Tab bar
@@ -906,6 +931,11 @@ const translations = {
     save_changes: '保存更改',
     cancel: '取消',
     success_save_academic: '学术信息保存成功！',
+    earned_xp: '你获得了 +{xp} XP！',
+    level_up_title: '等级提升！',
+    level_up_desc: '你现在的等级是 {level}！',
+    xp_progress: '{current} / {next} XP',
+    daily_limit_reached: '已达到该操作的每日经验值上限。',
   },
   ko: {
     // Tab bar
@@ -1057,6 +1087,11 @@ const translations = {
     save_changes: '변경사항 저장',
     cancel: '취소',
     success_save_academic: '학술 정보가 성공적으로 저장되었습니다!',
+    earned_xp: '+{xp} XP를 획득했습니다!',
+    level_up_title: '레벨 업!',
+    level_up_desc: '이제 {level} 레벨입니다!',
+    xp_progress: '{current} / {next} XP',
+    daily_limit_reached: '이 작업의 일일 XP 제한에 도달했습니다.',
   }
 };
 

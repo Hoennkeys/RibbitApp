@@ -84,7 +84,29 @@ export default function ChatScreen({ navigation, route }) {
     if (!currentUser) return;
     try {
       const chatData = await dataService.getChats(currentUser.id);
-      setChats(chatData || []);
+      if (chatData && chatData.length > 0) {
+        const chatsWithDetails = await Promise.all(
+          chatData.map(async (chat) => {
+            const latestMsg = await dataService.getLatestMessage(chat.id);
+            const unreadCount = await dataService.getUnreadCount(chat.id, currentUser.id);
+            return {
+              ...chat,
+              last_message: latestMsg ? latestMsg.text : chat.last_message,
+              last_message_time: latestMsg ? latestMsg.created_at : chat.created_at,
+              unread_count: unreadCount,
+            };
+          })
+        );
+        // Sort by last_message_time descending
+        chatsWithDetails.sort((a, b) => {
+          const timeA = new Date(a.last_message_time || a.created_at);
+          const timeB = new Date(b.last_message_time || b.created_at);
+          return timeB - timeA;
+        });
+        setChats(chatsWithDetails);
+      } else {
+        setChats([]);
+      }
     } catch (error) {
       console.error('Error fetching chats:', error);
     } finally {
@@ -98,7 +120,7 @@ export default function ChatScreen({ navigation, route }) {
       
       // Subscribe to chats changes to update the conversation list in real-time
       const chatsChannel = supabase
-        .channel('realtime-chats')
+        .channel('realtime-chats-list')
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'chats' },
@@ -108,8 +130,21 @@ export default function ChatScreen({ navigation, route }) {
         )
         .subscribe();
 
+      // Also subscribe to messages changes to instantly capture new texts and unread changes
+      const messagesChannel = supabase
+        .channel('realtime-messages-list')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'messages' },
+          () => {
+            loadChats();
+          }
+        )
+        .subscribe();
+
       return () => {
         chatsChannel.unsubscribe();
+        messagesChannel.unsubscribe();
       };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

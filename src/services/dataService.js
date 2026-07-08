@@ -497,6 +497,33 @@ export const dataService = {
     return data && data.length > 0;
   },
 
+  getLatestMessage: async (chatId) => {
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('chat_id', chatId)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (error || !data || data.length === 0) return null;
+    return data[0];
+  },
+
+  getUnreadCount: async (chatId, currentUserId) => {
+    const { count, error } = await supabase
+      .from('messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('chat_id', chatId)
+      .neq('sender_id', currentUserId)
+      .eq('status', 'sent');
+
+    if (error) {
+      console.error('Error getting unread count:', error);
+      return 0;
+    }
+    return count || 0;
+  },
+
   getAllProfiles: async () => {
     const { data, error } = await supabase
       .from('profiles')

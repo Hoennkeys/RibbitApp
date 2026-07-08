@@ -142,6 +142,11 @@ const translations = {
     no_experiences: 'Nenhuma experiência cadastrada.',
     save_experiences: 'Salvar Experiências',
     experience_label: 'Experiência',
+    lattes_link_placeholder: 'Link do Currículo Lattes',
+    linkedin_link_placeholder: 'Link do perfil do LinkedIn',
+    import_btn: 'Importar',
+    save_links_btn: 'Salvar Links',
+    connect_curriculum_title: 'Conectar Currículos',
   },
   en: {
     // Tab bar
@@ -284,6 +289,11 @@ const translations = {
     no_experiences: 'No experiences added.',
     save_experiences: 'Save Experiences',
     experience_label: 'Experience',
+    lattes_link_placeholder: 'Lattes CV Link',
+    linkedin_link_placeholder: 'LinkedIn Profile Link',
+    import_btn: 'Import',
+    save_links_btn: 'Save Links',
+    connect_curriculum_title: 'Connect Curriculums',
   },
   es: {
     // Tab bar
@@ -426,6 +436,11 @@ const translations = {
     no_experiences: 'No hay experiencias registradas.',
     save_experiences: 'Guardar Experiencias',
     experience_label: 'Experiencia',
+    lattes_link_placeholder: 'Enlace de Currículo Lattes',
+    linkedin_link_placeholder: 'Enlace de perfil de LinkedIn',
+    import_btn: 'Importar',
+    save_links_btn: 'Guardar Enlaces',
+    connect_curriculum_title: 'Conectar Currículos',
   },
   fr: {
     // Tab bar
@@ -568,6 +583,11 @@ const translations = {
     no_experiences: 'Aucune expérience enregistrée.',
     save_experiences: 'Enregistrer les expériences',
     experience_label: 'Expérience',
+    lattes_link_placeholder: 'Lien du CV Lattes',
+    linkedin_link_placeholder: 'Lien du profil LinkedIn',
+    import_btn: 'Importer',
+    save_links_btn: 'Enregistrer les liens',
+    connect_curriculum_title: 'Connecter les CV',
   },
   it: {
     // Tab bar
@@ -710,6 +730,11 @@ const translations = {
     no_experiences: 'Nessuna esperienza registrata.',
     save_experiences: 'Salva Esperienze',
     experience_label: 'Esperienza',
+    lattes_link_placeholder: 'Link del CV Lattes',
+    linkedin_link_placeholder: 'Link del profilo LinkedIn',
+    import_btn: 'Importa',
+    save_links_btn: 'Salva Link',
+    connect_curriculum_title: 'Collega CV',
   },
   zh: {
     // Tab bar
@@ -852,6 +877,11 @@ const translations = {
     no_experiences: '未添加任何经历。',
     save_experiences: '保存经历',
     experience_label: '经验/经历',
+    lattes_link_placeholder: 'Lattes 简历链接',
+    linkedin_link_placeholder: 'LinkedIn 个人资料链接',
+    import_btn: '导入',
+    save_links_btn: '保存链接',
+    connect_curriculum_title: '连接简历',
   },
   ko: {
     // Tab bar
@@ -994,6 +1024,11 @@ const translations = {
     no_experiences: '등록된 경력이 없습니다.',
     save_experiences: '경력 저장',
     experience_label: '경력',
+    lattes_link_placeholder: 'Lattes 이력서 링크',
+    linkedin_link_placeholder: 'LinkedIn 프로필 링크',
+    import_btn: '가져오기',
+    save_links_btn: '링크 저장',
+    connect_curriculum_title: '이력서 연결',
   }
 };
 

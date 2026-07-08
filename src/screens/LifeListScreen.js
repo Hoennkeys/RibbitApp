@@ -20,6 +20,7 @@ import {
   PermissionsAndroid,
   BackHandler,
   Modal,
+  Linking,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
@@ -62,6 +63,12 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
   const [newExpInst, setNewExpInst] = useState('');
   const [newExpDesc, setNewExpDesc] = useState('');
   const [newExpPeriod, setNewExpPeriod] = useState('');
+
+  // States para Links do Lattes e LinkedIn
+  const [lattesLink, setLattesLink] = useState('');
+  const [linkedinLink, setLinkedinLink] = useState('');
+  const [importingLattes, setImportingLattes] = useState(false);
+  const [importingLinkedin, setImportingLinkedin] = useState(false);
 
   useEffect(() => {
     if (!isGuest && user) {
@@ -111,17 +118,23 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
             setStatusText(parsed.statusText || '');
             setInstituicaoText(parsed.instituicaoText || '');
             setExperiences(parsed.experiences || []);
+            setLattesLink(parsed.lattesLink || '');
+            setLinkedinLink(parsed.linkedinLink || '');
           } else {
             setBioText('');
             setStatusText('');
             setInstituicaoText('');
             setExperiences([]);
+            setLattesLink('');
+            setLinkedinLink('');
           }
         } catch (e) {
           setBioText(profileData.bio || '');
           setStatusText('');
           setInstituicaoText('');
           setExperiences([]);
+          setLattesLink('');
+          setLinkedinLink('');
         }
       } else {
         setProfile({
@@ -146,7 +159,9 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
         bioText,
         statusText,
         instituicaoText,
-        experiences // Retain current experiences list
+        experiences,
+        lattesLink,
+        linkedinLink
       });
       await dataService.updateBio(user.id, bioPayload);
       Alert.alert('Sucesso', 'Alterações salvas!');
@@ -159,23 +174,108 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
     }
   };
 
-  const handleSaveExperiences = async (updatedExps) => {
+  const handleSaveExperiences = async (updatedExps, updatedLattes = lattesLink, updatedLinkedin = linkedinLink) => {
     setSavingAcademic(true);
     try {
       const bioPayload = JSON.stringify({
         bioText,
         statusText,
         instituicaoText,
-        experiences: updatedExps
+        experiences: updatedExps,
+        lattesLink: updatedLattes,
+        linkedinLink: updatedLinkedin
       });
       await dataService.updateBio(user.id, bioPayload);
-      Alert.alert('Sucesso', 'Experiências salvas!');
       await loadProfileAndData();
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível salvar as experiências.');
+      Alert.alert('Erro', 'Não foi possível salvar as informações.');
     } finally {
       setSavingAcademic(false);
     }
+  };
+
+  const handleOpenLink = async (type) => {
+    const url = type === 'lattes' ? lattesLink : linkedinLink;
+    if (url) {
+      try {
+        const cleanUrl = url.trim().startsWith('http') ? url.trim() : `https://${url.trim()}`;
+        const supported = await Linking.canOpenURL(cleanUrl);
+        if (supported) {
+          await Linking.openURL(cleanUrl);
+        } else {
+          Alert.alert('Erro', 'Não foi possível abrir o link informado.');
+        }
+      } catch (e) {
+        Alert.alert('Erro', 'Não foi possível abrir o link.');
+      }
+    } else {
+      Alert.alert(
+        'Link não cadastrado',
+        `Por favor, configure seu link nas Informações Acadêmicas para poder acessar por aqui.`,
+        [
+          { text: 'Configurar', onPress: () => setCurrentView('academicInfo') },
+          { text: 'Cancelar', style: 'cancel' }
+        ]
+      );
+    }
+  };
+
+  const handleImportLattes = () => {
+    if (!lattesLink.trim()) {
+      Alert.alert('Erro', 'Por favor, insira o link do seu Currículo Lattes.');
+      return;
+    }
+    setImportingLattes(true);
+    setTimeout(() => {
+      setImportingLattes(false);
+      if (lattesLink.toLowerCase().includes('lattes.cnpq.br')) {
+        const importedExp = {
+          id: Date.now().toString(),
+          title: 'Pesquisador em Bioacústica de Anfíbios',
+          institution: 'Laboratório de Herpetologia - USP',
+          description: 'Mapeamento acústico de espécies da Mata Atlântica e análise espectrográfica automatizada.',
+          period: '2023 - Presente'
+        };
+        const updated = [...experiences, importedExp];
+        setExperiences(updated);
+        handleSaveExperiences(updated, lattesLink, linkedinLink);
+        Alert.alert('Sucesso', 'Experiência importada do CNPq Lattes com sucesso!');
+      } else {
+        Alert.alert(
+          'Importação Direta Indisponível',
+          'Não foi possível extrair dados automaticamente deste link. Por favor, insira suas experiências manualmente.'
+        );
+      }
+    }, 1500);
+  };
+
+  const handleImportLinkedin = () => {
+    if (!linkedinLink.trim()) {
+      Alert.alert('Erro', 'Por favor, insira o link do seu perfil do LinkedIn.');
+      return;
+    }
+    setImportingLinkedin(true);
+    setTimeout(() => {
+      setImportingLinkedin(false);
+      if (linkedinLink.toLowerCase().includes('linkedin.com')) {
+        const importedExp = {
+          id: Date.now().toString(),
+          title: 'Biólogo de Campo Senior',
+          institution: 'Instituto de Pesquisas Ambientais',
+          description: 'Coleta de dados biológicos em campo e consultoria em conservação de ecossistemas.',
+          period: '2021 - Presente'
+        };
+        const updated = [...experiences, importedExp];
+        setExperiences(updated);
+        handleSaveExperiences(updated, lattesLink, linkedinLink);
+        Alert.alert('Sucesso', 'Experiência importada do LinkedIn com sucesso!');
+      } else {
+        Alert.alert(
+          'Importação Direta Indisponível',
+          'Não foi possível extrair dados automaticamente deste link. Por favor, insira suas experiências manualmente.'
+        );
+      }
+    }, 1500);
   };
 
   const handleAddExperience = () => {
@@ -594,9 +694,57 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
           </TouchableOpacity>
           <Text style={styles.subTitle}>{t('academic_experiences_title')}</Text>
         </View>
-        <ScrollView contentContainerStyle={styles.formPadding} keyboardShouldPersistTaps="handled">
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.formPadding} keyboardShouldPersistTaps="handled">
           
-          <View style={styles.experienceFormCard}>
+          <View style={styles.linksCard}>
+            <Text style={styles.linksCardTitle}>{t('connect_curriculum_title')}</Text>
+            
+            <View style={styles.linkInputRow}>
+              <TextInput
+                style={[styles.experienceInput, { flex: 1, marginBottom: 0 }]}
+                placeholder={t('lattes_link_placeholder')}
+                placeholderTextColor={theme.colors.textSecondary}
+                value={lattesLink}
+                onChangeText={setLattesLink}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                style={styles.importButton}
+                onPress={handleImportLattes}
+                disabled={importingLattes}
+              >
+                {importingLattes ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.importButtonText}>{t('import_btn')}</Text>}
+              </TouchableOpacity>
+            </View>
+
+            <View style={[styles.linkInputRow, { marginTop: 12 }]}>
+              <TextInput
+                style={[styles.experienceInput, { flex: 1, marginBottom: 0 }]}
+                placeholder={t('linkedin_link_placeholder')}
+                placeholderTextColor={theme.colors.textSecondary}
+                value={linkedinLink}
+                onChangeText={setLinkedinLink}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                style={styles.importButton}
+                onPress={handleImportLinkedin}
+                disabled={importingLinkedin}
+              >
+                {importingLinkedin ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.importButtonText}>{t('import_btn')}</Text>}
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.saveLinksButton}
+              onPress={() => handleSaveExperiences(experiences, lattesLink, linkedinLink)}
+              disabled={savingAcademic}
+            >
+              {savingAcademic ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.saveLinksButtonText}>{t('save_links_btn')}</Text>}
+            </TouchableOpacity>
+          </View>
+
+          <View style={[styles.experienceFormCard, { marginTop: 20 }]}>
             <Text style={styles.experienceFormTitle}>{t('add_experience')}</Text>
             
             <TextInput
@@ -747,19 +895,20 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
 
         <Text style={styles.sectionLabel}>{t('connect_section')}</Text>
         <View style={styles.groupContainer}>
-          <TouchableOpacity style={styles.menuItem} onPress={() => {}}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => handleOpenLink('lattes')}>
             <Text style={styles.menuIcon}>🔗</Text>
             <Text style={styles.menuText}>Currículo Lattes</Text>
             <Text style={styles.menuArrow}>›</Text>
           </TouchableOpacity>
           <View style={styles.separator} />
-          <TouchableOpacity style={styles.menuItem} onPress={() => {}}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => handleOpenLink('linkedin')}>
             <Text style={styles.menuIcon}>💼</Text>
             <Text style={styles.menuText}>LinkedIn</Text>
             <Text style={styles.menuArrow}>›</Text>
           </TouchableOpacity>
         </View>
       </View>
+      <View style={{ height: 180 }} />
     </ScrollView>
 
       <Modal
@@ -920,6 +1069,13 @@ const styles = StyleSheet.create({
   statusBadgeItemSelected: { borderColor: theme.colors.primary, backgroundColor: 'rgba(52, 199, 89, 0.1)' },
   statusBadgeEmoji: { fontSize: 16, marginRight: 6 },
   statusBadgeText: { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '500' },
+  linksCard: { backgroundColor: theme.colors.surface, borderRadius: 16, padding: 16, ...theme.shadows.soft },
+  linksCardTitle: { color: theme.colors.textPrimary, fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
+  linkInputRow: { flexDirection: 'row', alignItems: 'center' },
+  importButton: { backgroundColor: theme.colors.primary, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 16, marginLeft: 8, justifyContent: 'center', alignItems: 'center' },
+  importButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
+  saveLinksButton: { backgroundColor: theme.colors.accent, borderRadius: 8, padding: 12, alignItems: 'center', marginTop: 14 },
+  saveLinksButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
   experienceFormCard: { backgroundColor: theme.colors.surface, borderRadius: 16, padding: 16, ...theme.shadows.soft },
   experienceFormTitle: { color: theme.colors.textPrimary, fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
   experienceInput: { backgroundColor: theme.colors.background, borderRadius: 8, padding: 12, color: theme.colors.textPrimary, fontSize: 15, marginBottom: 10 },

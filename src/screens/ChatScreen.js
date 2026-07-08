@@ -19,6 +19,7 @@ import {
   Alert,
   BackHandler,
 } from 'react-native';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { theme } from '../utils/theme';
 import { useLanguage } from '../utils/i18n';
 import supabase from '../services/supabaseClient';
@@ -266,6 +267,33 @@ export default function ChatScreen({ navigation, route }) {
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível enviar a mensagem.');
     }
+  };
+
+  // Attachment: open image gallery
+  const handleAttachment = () => {
+    launchImageLibrary(
+      { mediaType: 'mixed', quality: 0.8 },
+      (response) => {
+        if (response.didCancel || response.errorCode) return;
+        Alert.alert('Em breve', 'Envio de arquivos estará disponível em próxima atualização.');
+      }
+    );
+  };
+
+  // Camera: open native camera
+  const handleCamera = () => {
+    launchCamera(
+      { mediaType: 'photo', quality: 0.8, saveToPhotos: false },
+      (response) => {
+        if (response.didCancel || response.errorCode) return;
+        Alert.alert('Em breve', 'Envio de fotos estará disponível em próxima atualização.');
+      }
+    );
+  };
+
+  // Mic: placeholder for future voice messages
+  const handleMic = () => {
+    Alert.alert('Em breve', 'Mensagens de áudio estarão disponíveis em próxima atualização.');
   };
 
   // 6. Open partner profile card modal
@@ -533,7 +561,14 @@ export default function ChatScreen({ navigation, route }) {
         />
       )}
 
+      {/* ── WhatsApp-style input bar ── */}
       <View style={styles.inputArea}>
+        {/* Emoji button */}
+        <TouchableOpacity style={styles.inputIconBtn}>
+          <Text style={styles.inputIcon}>😊</Text>
+        </TouchableOpacity>
+
+        {/* Text input */}
         <TextInput
           style={styles.messageInput}
           placeholder={t('message_placeholder')}
@@ -541,10 +576,29 @@ export default function ChatScreen({ navigation, route }) {
           value={messageText}
           onChangeText={setMessageText}
           multiline
+          returnKeyType="default"
         />
-        <TouchableOpacity style={styles.sendButton} onPress={handleSendMessage}>
-          <Text style={styles.sendIcon}>➤</Text>
+
+        {/* Attachment clip */}
+        <TouchableOpacity style={styles.inputIconBtn} onPress={handleAttachment}>
+          <Text style={styles.inputIcon}>📎</Text>
         </TouchableOpacity>
+
+        {/* Camera */}
+        <TouchableOpacity style={styles.inputIconBtn} onPress={handleCamera}>
+          <Text style={styles.inputIcon}>📷</Text>
+        </TouchableOpacity>
+
+        {/* Send arrow (when typing) or Mic (when idle) */}
+        {messageText.trim().length > 0 ? (
+          <TouchableOpacity style={styles.sendFab} onPress={handleSendMessage}>
+            <Text style={styles.sendFabIcon}>➤</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.sendFab} onPress={handleMic}>
+            <Text style={styles.sendFabIcon}>🎤</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </ChatWrapper>
   );
@@ -587,10 +641,54 @@ const styles = StyleSheet.create({
   myTimeText: { color: 'rgba(255, 255, 255, 0.7)' },
   otherTimeText: { color: theme.colors.textSecondary },
   checkMark: { color: '#34C759', fontSize: 12, fontWeight: 'bold' },
-  inputArea: { flexDirection: 'row', alignItems: 'center', padding: 12, paddingBottom: Platform.OS === 'ios' ? 30 : 12, backgroundColor: theme.colors.surface, borderTopWidth: 1, borderTopColor: theme.colors.background },
-  messageInput: { flex: 1, backgroundColor: theme.colors.background, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, marginHorizontal: 8, color: theme.colors.textPrimary, fontSize: 16, maxHeight: 100 },
-  sendButton: { padding: 8 },
-  sendIcon: { fontSize: 24 },
+
+  // ── WhatsApp-style input bar ──
+  inputArea: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+    backgroundColor: theme.colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.06)',
+  },
+  inputIconBtn: {
+    padding: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  inputIcon: {
+    fontSize: 22,
+    lineHeight: 28,
+  },
+  messageInput: {
+    flex: 1,
+    minHeight: 40,
+    maxHeight: 120,
+    backgroundColor: theme.colors.background,
+    borderRadius: 22,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginHorizontal: 4,
+    color: theme.colors.textPrimary,
+    fontSize: 16,
+    lineHeight: 20,
+  },
+  sendFab: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: theme.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 4,
+  },
+  sendFabIcon: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+  },
   fabNewChat: { position: 'absolute', bottom: 24, right: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: theme.colors.accent, justifyContent: 'center', alignItems: 'center', ...theme.shadows.medium },
   fabIcon: { color: '#FFFFFF', fontSize: 30, fontWeight: '300' },
   emptyText: { color: theme.colors.textSecondary, textAlign: 'center', marginTop: 40, fontSize: 16 },

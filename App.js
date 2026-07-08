@@ -4,7 +4,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import React, { useState, useEffect } from 'react';
-import { SafeAreaView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView, StatusBar, StyleSheet, Text, View, Image } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import supabase from './src/services/supabaseClient';
@@ -95,13 +95,26 @@ export default function App() {
                 fontWeight: '500',
               },
               tabBarIcon: ({ color, size }) => {
+                if (route.name === 'Perfil') {
+                  return (
+                    <Image
+                      source={require('./src/assets/images/logo_transparent.png')}
+                      style={{
+                        width: 24,
+                        height: 24,
+                        opacity: color === theme.colors.primary ? 1 : 0.6,
+                      }}
+                      resizeMode="contain"
+                    />
+                  );
+                }
+
                 let icon;
                 if (route.name === 'Dashboard') icon = '📊';
                 else if (route.name === 'SoundID') icon = '🎙️';
                 else if (route.name === 'Chat') icon = '💬';
                 else if (route.name === 'Explorar') icon = '🔍';
                 else if (route.name === 'Assistente') icon = '🧙';
-                else if (route.name === 'Perfil') icon = '🐸';
 
                 return <Text style={{ fontSize: 22, opacity: color === theme.colors.primary ? 1 : 0.6 }}>{icon}</Text>;
               },

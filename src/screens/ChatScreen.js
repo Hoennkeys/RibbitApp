@@ -16,6 +16,7 @@ import {
   Platform,
 } from 'react-native';
 import { theme } from '../utils/theme';
+import { useLanguage } from '../utils/i18n';
 
 const MOCK_CHATS = [
   { id: '1', name: 'Dr. Helder', lastMessage: 'Aquela espécie parece ser um Leptodactylus.', time: '14:20', unread: 2 },
@@ -24,6 +25,7 @@ const MOCK_CHATS = [
 ];
 
 export default function ChatScreen() {
+  const { t } = useLanguage();
   const [selectedChat, setSelectedChat] = useState(null);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([
@@ -45,7 +47,7 @@ export default function ChatScreen() {
       >
         <View style={styles.chatHeader}>
           <TouchableOpacity onPress={() => setSelectedChat(null)} style={styles.backButton}>
-            <Text style={styles.backButtonText}>‹ Voltar</Text>
+            <Text style={styles.backButtonText}>{t('back')}</Text>
           </TouchableOpacity>
           <Text style={styles.chatTitle}>{selectedChat.name}</Text>
         </View>
@@ -73,7 +75,8 @@ export default function ChatScreen() {
           </TouchableOpacity>
           <TextInput
             style={styles.messageInput}
-            placeholder="Mensagem..."
+            placeholder={t('message_placeholder')}
+            placeholderTextColor={theme.colors.textSecondary}
             value={message}
             onChangeText={setMessage}
             multiline
@@ -90,7 +93,7 @@ export default function ChatScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Chat</Text>
-        <Text style={styles.subtitle}>Converse com outros pesquisadores</Text>
+        <Text style={styles.subtitle}>{t('chat_subtitle')}</Text>
       </View>
 
       <FlatList
@@ -129,7 +132,7 @@ export default function ChatScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
-  header: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 24, alignItems: 'center' },
+  header: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 24, alignItems: 'center' },
   title: { fontSize: 34, fontWeight: '800', color: theme.colors.textPrimary, textAlign: 'center' },
   subtitle: { fontSize: 16, color: theme.colors.textSecondary, marginTop: 8, textAlign: 'center' },
   listContent: { paddingHorizontal: 20 },
@@ -144,7 +147,7 @@ const styles = StyleSheet.create({
   lastMessage: { fontSize: 14, color: theme.colors.textSecondary, flex: 1, marginRight: 8 },
   unreadBadge: { backgroundColor: theme.colors.primary, borderRadius: 10, minWidth: 20, height: 20, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 6 },
   unreadText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
-  chatHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 60, paddingBottom: 16, backgroundColor: theme.colors.surface, ...theme.shadows.soft },
+  chatHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, backgroundColor: theme.colors.surface, ...theme.shadows.soft },
   backButton: { marginRight: 16 },
   backButtonText: { color: theme.colors.accent, fontSize: 17, fontWeight: '500' },
   chatTitle: { fontSize: 18, fontWeight: '700', color: theme.colors.textPrimary },

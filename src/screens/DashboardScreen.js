@@ -13,64 +13,67 @@ import {
   Image,
 } from 'react-native';
 import { theme } from '../utils/theme';
+import { useLanguage } from '../utils/i18n';
 
 const DASHBOARD_DATA = {
   news: [
-    { id: 1, title: 'Nova espécie descoberta na Amazônia', date: 'Hoje' },
-    { id: 2, title: 'Workshop de Identificação Sonora no próximo sábado', date: '2 dias atrás' },
+    { id: 1, titleKey: 'news_1', dateKey: 'date_today' },
+    { id: 2, titleKey: 'news_2', dateKey: 'date_2days' },
   ],
   importantDiscoveries: [
-    { id: 101, name: 'Sapo-de-chifre', location: 'Mata Atlântica', rarity: 'Raro' },
-    { id: 102, name: 'Perereca-verde', location: 'Cerrado', rarity: 'Comum' },
+    { id: 101, nameKey: 'species_horned', locationKey: 'region_atlantic', rarityKey: 'rarity_rare' },
+    { id: 102, nameKey: 'species_tree', locationKey: 'region_cerrado', rarityKey: 'rarity_common' },
   ],
   recentActivity: [
-    { id: 201, user: 'João Silva', action: 'identificou um Sapo-cururu', time: '10 min atrás' },
-    { id: 202, user: 'Maria Souza', action: 'subiu uma nova foto de Perereca-de-vidro', time: '45 min atrás' },
+    { id: 201, user: 'João Silva', actionKey: 'act_identified', timeKey: 'time_10m' },
+    { id: 202, user: 'Maria Souza', actionKey: 'act_uploaded', timeKey: 'time_45m' },
   ]
 };
 
 export default function DashboardScreen() {
+  const { t } = useLanguage();
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
-        <Text style={styles.title}>Dashboard</Text>
-        <Text style={styles.subtitle}>O que há de novo no mundo dos anfíbios</Text>
+        <Text style={styles.title}>{t('dashboard')}</Text>
+        <Text style={styles.subtitle}>{t('dashboard_subtitle')}</Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Novidades & Anúncios</Text>
+        <Text style={styles.sectionTitle}>{t('news')}</Text>
         {DASHBOARD_DATA.news.map(item => (
           <View key={item.id} style={styles.card}>
-            <Text style={styles.cardTitle}>{item.title}</Text>
-            <Text style={styles.cardInfo}>{item.date}</Text>
+            <Text style={styles.cardTitle}>{t(item.titleKey)}</Text>
+            <Text style={styles.cardInfo}>{t(item.dateKey)}</Text>
           </View>
         ))}
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Descobertas Importantes</Text>
+        <Text style={styles.sectionTitle}>{t('discoveries')}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
           {DASHBOARD_DATA.importantDiscoveries.map(item => (
             <TouchableOpacity key={item.id} style={styles.horizontalCard}>
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>{item.rarity}</Text>
+                <Text style={styles.badgeText}>{t(item.rarityKey)}</Text>
               </View>
-              <Text style={styles.discoveryName}>{item.name}</Text>
-              <Text style={styles.discoveryLocation}>{item.location}</Text>
+              <Text style={styles.discoveryName}>{t(item.nameKey)}</Text>
+              <Text style={styles.discoveryLocation}>{t(item.locationKey)}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Atividade Recente</Text>
+        <Text style={styles.sectionTitle}>{t('activity')}</Text>
         <View style={styles.groupContainer}>
           {DASHBOARD_DATA.recentActivity.map((item, index) => (
             <View key={item.id}>
               <View style={styles.activityItem}>
                 <Text style={styles.activityUser}>{item.user}</Text>
-                <Text style={styles.activityAction}>{item.action}</Text>
-                <Text style={styles.activityTime}>{item.time}</Text>
+                <Text style={styles.activityAction}>{t(item.actionKey)}</Text>
+                <Text style={styles.activityTime}>{t(item.timeKey)}</Text>
               </View>
               {index < DASHBOARD_DATA.recentActivity.length - 1 && <View style={styles.separator} />}
             </View>
@@ -84,7 +87,7 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
-  content: { padding: 24, paddingTop: 60 },
+  content: { padding: 24, paddingTop: 24 },
   header: { alignItems: 'center', marginBottom: 40 },
   title: { fontSize: 34, fontWeight: '800', color: theme.colors.textPrimary, textAlign: 'center', letterSpacing: -0.5 },
   subtitle: { fontSize: 16, color: theme.colors.textSecondary, marginTop: 8, textAlign: 'center' },

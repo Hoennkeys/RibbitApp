@@ -19,8 +19,10 @@ import Spectrogram from '../components/Spectrogram';
 import { dataService } from '../services/dataService';
 import { supabase } from '../services/supabaseClient';
 import { theme } from '../utils/theme';
+import { useLanguage } from '../utils/i18n';
 
 export default function SpeciesDetailsScreen({ speciesId, onBack }) {
+  const { t } = useLanguage();
   const [species, setSpecies] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -74,9 +76,9 @@ export default function SpeciesDetailsScreen({ speciesId, onBack }) {
   if (!species) {
     return (
       <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Espécie não encontrada.</Text>
+        <Text style={styles.errorText}>{t('spec_not_found')}</Text>
         <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Text style={styles.backButtonText}>Voltar</Text>
+          <Text style={styles.backButtonText}>{t('spec_back')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -89,7 +91,7 @@ export default function SpeciesDetailsScreen({ speciesId, onBack }) {
     >
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Text style={styles.backButtonText}>‹ Voltar</Text>
+          <Text style={styles.backButtonText}>{t('back')}</Text>
         </TouchableOpacity>
 
         <View style={styles.header}>
@@ -107,7 +109,7 @@ export default function SpeciesDetailsScreen({ speciesId, onBack }) {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Canto do Anfíbio</Text>
+          <Text style={styles.sectionTitle}>{t('spec_sound')}</Text>
           <View style={styles.playerCard}>
             <Spectrogram isActive={isPlaying} color={theme.colors.primary} />
             <TouchableOpacity
@@ -115,28 +117,28 @@ export default function SpeciesDetailsScreen({ speciesId, onBack }) {
               onPress={() => setIsPlaying(!isPlaying)}
             >
               <Text style={styles.playButtonText}>
-                {isPlaying ? 'PAUSAR' : 'OUVIR CANTO 🔊'}
+                {isPlaying ? t('spec_pause') : t('spec_play')}
               </Text>
             </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Descrição</Text>
+          <Text style={styles.sectionTitle}>{t('spec_description')}</Text>
           <View style={styles.infoCard}>
             <Text style={styles.bodyText}>{species.descricao}</Text>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Fato Curioso</Text>
+          <Text style={styles.sectionTitle}>{t('spec_fact')}</Text>
           <View style={[styles.infoCard, styles.factCard]}>
             <Text style={styles.factText}>💡 {species.fatos_curiosos}</Text>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Discussão Científica ({comments.length})</Text>
+          <Text style={styles.sectionTitle}>{t('spec_discussion').replace('{count}', comments.length).replace('({count})', `(${comments.length})`)}</Text>
           {comments.map((item) => (
             <View key={item.id} style={styles.commentCard}>
               <View style={styles.commentHeader}>
@@ -153,14 +155,14 @@ export default function SpeciesDetailsScreen({ speciesId, onBack }) {
             <View style={styles.addCommentContainer}>
               <TextInput
                 style={styles.commentInput}
-                placeholder="Adicionar nota científica..."
+                placeholder={t('spec_comment_placeholder')}
                 placeholderTextColor={theme.colors.textSecondary}
                 value={newCommentText}
                 onChangeText={setNewCommentText}
                 multiline
               />
               <TouchableOpacity style={styles.sendButton} onPress={handleAddComment}>
-                <Text style={styles.sendButtonText}>Enviar</Text>
+                <Text style={styles.sendButtonText}>{t('spec_send')}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -174,7 +176,7 @@ const styles = StyleSheet.create({
   keyboardContainer: { flex: 1, backgroundColor: theme.colors.background },
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  content: { padding: 24, paddingTop: 64, paddingBottom: 100 },
+  content: { padding: 24, paddingTop: 24, paddingBottom: 100 },
   errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
   errorText: { color: theme.colors.textPrimary, fontSize: 16, marginBottom: 20 },
   backButton: { marginBottom: 24 },

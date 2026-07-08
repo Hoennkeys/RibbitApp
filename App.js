@@ -4,7 +4,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import React, { useState, useEffect } from 'react';
-import { SafeAreaView, StatusBar, StyleSheet, Text, View, Image } from 'react-native';
+import { StatusBar, StyleSheet, Text, View, Image } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import supabase from './src/services/supabaseClient';
@@ -19,10 +20,12 @@ import ChatScreen from './src/screens/ChatScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import SignUpScreen from './src/screens/SignUpScreen';
 import FloatingActionButton from './src/components/FloatingActionButton';
+import { LanguageProvider, useLanguage } from './src/utils/i18n';
 
 const Tab = createBottomTabNavigator();
 
-export default function App() {
+function AppContent() {
+  const { t } = useLanguage();
   const [session, setSession] = useState(null);
   const [isGuest, setIsGuest] = useState(false);
   const [isSigningUp, setIsSigningUp] = useState(false);
@@ -70,7 +73,7 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       <NavigationContainer>
         <View style={{ flex: 1 }}>
           <Tab.Navigator
@@ -78,8 +81,9 @@ export default function App() {
               tabBarActiveTintColor: theme.colors.primary,
               tabBarInactiveTintColor: theme.colors.textSecondary,
               tabBarStyle: {
-                backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                borderTopWidth: 0,
+                backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                borderWidth: 1,
+                borderColor: 'rgba(249, 250, 251, 0.08)',
                 height: 85,
                 paddingBottom: 25,
                 paddingTop: 10,
@@ -125,39 +129,42 @@ export default function App() {
               name="Dashboard"
               component={DashboardScreen}
               options={{
-                tabBarLabel: 'Painel',
+                tabBarLabel: t('tab_dashboard'),
               }}
             />
             <Tab.Screen
               name="SoundID"
               component={SoundIdScreen}
               options={{
-                tabBarLabel: 'Sound ID',
+                tabBarLabel: t('tab_soundid'),
               }}
             />
             <Tab.Screen
               name="Chat"
               component={ChatScreen}
               options={{
-                tabBarLabel: 'Chat',
+                tabBarLabel: t('tab_chat'),
               }}
             />
             <Tab.Screen
               name="Explorar"
               component={ExploreScreen}
               options={{
-                tabBarLabel: 'Explorar',
+                tabBarLabel: t('tab_explore'),
               }}
             />
             <Tab.Screen
               name="Assistente"
               component={WizardScreen}
               options={{
-                tabBarLabel: 'Assistente',
+                tabBarLabel: t('tab_wizard'),
               }}
             />
             <Tab.Screen
               name="Perfil"
+              options={{
+                tabBarLabel: t('tab_profile'),
+              }}
             >
               {() => (
                 <LifeListScreen
@@ -176,6 +183,16 @@ export default function App() {
         </View>
       </NavigationContainer>
     </SafeAreaView>
+  );
+}
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <LanguageProvider>
+        <AppContent />
+      </LanguageProvider>
+    </SafeAreaProvider>
   );
 }
 

@@ -18,6 +18,7 @@ import {
   Modal,
   Alert,
   BackHandler,
+  Keyboard,
 } from 'react-native';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
@@ -27,6 +28,13 @@ import supabase from '../services/supabaseClient';
 import { dataService } from '../services/dataService';
 
 const audioRecorderPlayer = new AudioRecorderPlayer();
+
+const EMOJIS_LIST = [
+  '😊', '😂', '😍', '👍',
+  '❤️', '🙏', '😭', '😎',
+  '😉', '🔥', '😮', '🐸',
+  '🔊', '📷', '📍', '💬'
+];
 
 const formatTime = (isoString) => {
   if (!isoString) return '';
@@ -73,7 +81,22 @@ export default function ChatScreen({ navigation, route }) {
         }
       });
     }
+    // Fechar emoji picker ao mudar de tela
+    setShowEmojiPicker(false);
   }, [selectedChat, navigation]);
+
+  // Emoji picker visibility state
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+  // Close emoji picker automatically if native keyboard opens
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+      setShowEmojiPicker(false);
+    });
+    return () => {
+      keyboardDidShowListener.remove();
+    };
+  }, []);
   
   // New Chat Modal states
   const [showNewChatModal, setShowNewChatModal] = useState(false);
@@ -305,11 +328,27 @@ export default function ChatScreen({ navigation, route }) {
     }
   }, [messages]);
 
+  // Toggle emoji picker visibility (dismisses native keyboard)
+  const toggleEmojiPicker = () => {
+    if (showEmojiPicker) {
+      setShowEmojiPicker(false);
+    } else {
+      Keyboard.dismiss();
+      setShowEmojiPicker(true);
+    }
+  };
+
+  // Add selected emoji to the end of current text message
+  const handleSelectEmoji = (emoji) => {
+    setMessageText((prev) => prev + emoji);
+  };
+
   // 5. Send Message
   const handleSendMessage = async () => {
     if (!messageText.trim() || !selectedChat || !currentUser) return;
     const textToSend = messageText.trim();
     setMessageText('');
+    setShowEmojiPicker(false); // Close picker on send
     try {
       const sentMsg = await dataService.sendMessage(selectedChat.id, currentUser.id, textToSend);
       if (sentMsg) {
@@ -333,12 +372,12 @@ export default function ChatScreen({ navigation, route }) {
     };
   }, []);
 
-  // Image Helper: Upload and send image message
-  const handleUploadAndSendImage = async (uri, mimeType) => {
+  // Image Helper: Upload and send image message using stable Base64/ArrayBuffer
+  const handleUploadAndSendImage = async (uri, mimeType, base64) => {
     if (!selectedChat || !currentUser) return;
     try {
       setLoadingMessages(true);
-      const publicUrl = await dataService.uploadChatFile(currentUser.id, uri, mimeType || 'image/jpeg');
+      const publicUrl = await dataService.uploadChatFile(currentUser.id, uri, mimeType || 'image/jpeg', base64);
       const textToSend = `[image]:${publicUrl}`;
       const sentMsg = await dataService.sendMessage(selectedChat.id, currentUser.id, textToSend);
       if (sentMsg) {
@@ -358,11 +397,11 @@ export default function ChatScreen({ navigation, route }) {
   // Attachment: open image gallery
   const handleAttachment = () => {
     launchImageLibrary(
-      { mediaType: 'photo', quality: 0.8 },
+      { mediaType: 'photo', quality: 0.8, includeBase64: true },
       (response) => {
         if (response.didCancel || response.errorCode || !response.assets?.[0]) return;
         const asset = response.assets[0];
-        handleUploadAndSendImage(asset.uri, asset.type);
+        handleUploadAndSendImage(asset.uri, asset.type, asset.base64);
       }
     );
   };
@@ -370,11 +409,11 @@ export default function ChatScreen({ navigation, route }) {
   // Camera: open native camera
   const handleCamera = () => {
     launchCamera(
-      { mediaType: 'photo', quality: 0.8, saveToPhotos: false },
+      { mediaType: 'photo', quality: 0.8, saveToPhotos: false, includeBase64: true },
       (response) => {
         if (response.didCancel || response.errorCode || !response.assets?.[0]) return;
         const asset = response.assets[0];
-        handleUploadAndSendImage(asset.uri, asset.type);
+        handleUploadAndSendImage(asset.uri, asset.type, asset.base64);
       }
     );
   };
@@ -801,8 +840,8 @@ export default function ChatScreen({ navigation, route }) {
           // Interface normal (digitação e botões de mídia)
           <>
             {/* Emoji button */}
-            <TouchableOpacity style={styles.inputIconBtn}>
-              <Text style={styles.inputIcon}>😊</Text>
+            <TouchableOpacity style={styles.inputIconBtn} onPress={toggleEmojiPicker}>
+              <Text style={styles.inputIcon}>{showEmojiPicker ? '⌨️' : '😊'}</Text>
             </TouchableOpacity>
 
             {/* Text input */}
@@ -814,6 +853,7 @@ export default function ChatScreen({ navigation, route }) {
               onChangeText={setMessageText}
               multiline
               returnKeyType="default"
+              onFocus={() => setShowEmojiPicker(false)}
             />
 
             {/* Attachment clip */}
@@ -839,6 +879,26 @@ export default function ChatScreen({ navigation, route }) {
           </>
         )}
       </View>
+
+      {/* ── 16 Emojis 4x4 Grid Drawer ── */}
+      {showEmojiPicker && (
+        <View style={styles.emojiPickerContainer}>
+          <FlatList
+            data={EMOJIS_LIST}
+            numColumns={4}
+            keyExtractor={(item) => item}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.emojiButton}
+                onPress={() => handleSelectEmoji(item)}
+              >
+                <Text style={styles.emojiText}>{item}</Text>
+              </TouchableOpacity>
+            )}
+            contentContainerStyle={styles.emojiListContent}
+          />
+        </View>
+      )}
     </ChatWrapper>
   );
 }
@@ -942,4 +1002,25 @@ const styles = StyleSheet.create({
   userListItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: theme.colors.surface },
   userName: { color: theme.colors.textPrimary, fontSize: 16, fontWeight: '600' },
   userLevel: { color: theme.colors.primary, fontSize: 12, marginTop: 2 },
+
+  // Emoji Picker Styles
+  emojiPickerContainer: {
+    height: 220,
+    backgroundColor: theme.colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  emojiListContent: {
+    paddingVertical: 10,
+  },
+  emojiButton: {
+    flex: 1,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    margin: 4,
+  },
+  emojiText: {
+    fontSize: 28,
+  },
 });

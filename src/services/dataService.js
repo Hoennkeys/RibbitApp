@@ -320,18 +320,24 @@ export const dataService = {
     return result.publicUrl;
   },
 
-  uploadChatFile: async (userId, localUri, contentType) => {
+  uploadChatFile: async (userId, localUri, contentType, base64 = null) => {
     try {
-      const fileExt = localUri.split('.').pop() || 'mp4';
+      const fileExt = localUri.split('.').pop() || 'jpg';
       const fileName = `chat-media-${userId}-${Date.now()}.${fileExt}`;
       
-      // Lê a URI local como Blob usando a API fetch nativa do React Native
-      const response = await fetch(localUri);
-      const blob = await response.blob();
+      let uploadBody;
+      if (base64) {
+        // Envio ultra-estável via ArrayBuffer para imagens e arquivos com base64
+        uploadBody = decode(base64);
+      } else {
+        // Envio de fallback (ex: para áudios) usando Blob nativo via fetch local
+        const response = await fetch(localUri);
+        uploadBody = await response.blob();
+      }
 
       const { data, error } = await supabase.storage
         .from('avatars') // Reutiliza o bucket público 'avatars'
-        .upload(fileName, blob, {
+        .upload(fileName, uploadBody, {
           contentType: contentType || 'application/octet-stream',
           upsert: true
         });

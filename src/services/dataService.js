@@ -331,7 +331,11 @@ export const dataService = {
         uploadBody = decode(base64);
       } else {
         // Envio de fallback (ex: para áudios) usando Blob nativo via fetch local
-        const response = await fetch(localUri);
+        let uploadUri = localUri;
+        if (Platform.OS === 'android' && !uploadUri.startsWith('file://') && !uploadUri.startsWith('content://') && !uploadUri.startsWith('http')) {
+          uploadUri = `file://${uploadUri}`;
+        }
+        const response = await fetch(uploadUri);
         uploadBody = await response.blob();
       }
 

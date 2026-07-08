@@ -133,6 +133,15 @@ const translations = {
     level_label: 'Nível',
     xp_label: 'XP Acumulado',
     bio_dev: 'Editar sua biografia, instituição e status',
+    academic_experiences_title: 'Informações Acadêmicas',
+    add_experience: 'Adicionar Experiência',
+    exp_title_placeholder: 'Título/Cargo (ex: Pesquisador)',
+    exp_inst_placeholder: 'Instituição (ex: USP)',
+    exp_desc_placeholder: 'Descrição das atividades',
+    exp_period_placeholder: 'Período (ex: 2022 - Presente)',
+    no_experiences: 'Nenhuma experiência cadastrada.',
+    save_experiences: 'Salvar Experiências',
+    experience_label: 'Experiência',
   },
   en: {
     // Tab bar
@@ -266,6 +275,15 @@ const translations = {
     level_label: 'Level',
     xp_label: 'Accumulated XP',
     bio_dev: 'Edit your biography, institution and status',
+    academic_experiences_title: 'Academic Info',
+    add_experience: 'Add Experience',
+    exp_title_placeholder: 'Title/Role (e.g. Researcher)',
+    exp_inst_placeholder: 'Institution (e.g. MIT)',
+    exp_desc_placeholder: 'Description of activities',
+    exp_period_placeholder: 'Period (e.g. 2022 - Present)',
+    no_experiences: 'No experiences added.',
+    save_experiences: 'Save Experiences',
+    experience_label: 'Experience',
   },
   es: {
     // Tab bar
@@ -399,6 +417,15 @@ const translations = {
     level_label: 'Nivel',
     xp_label: 'XP Acumulado',
     bio_dev: 'Editar tu biografía, institución y estado',
+    academic_experiences_title: 'Información Académica',
+    add_experience: 'Agregar Experiencia',
+    exp_title_placeholder: 'Título/Cargo (ej: Investigador)',
+    exp_inst_placeholder: 'Institución (ej: UNAM)',
+    exp_desc_placeholder: 'Descripción de actividades',
+    exp_period_placeholder: 'Período (ej: 2022 - Presente)',
+    no_experiences: 'No hay experiencias registradas.',
+    save_experiences: 'Guardar Experiencias',
+    experience_label: 'Experiencia',
   },
   fr: {
     // Tab bar
@@ -532,6 +559,15 @@ const translations = {
     level_label: 'Niveau',
     xp_label: 'XP accumulés',
     bio_dev: 'Modifier votre biographie, institution et statut',
+    academic_experiences_title: 'Infos académiques',
+    add_experience: 'Ajouter une expérience',
+    exp_title_placeholder: 'Titre/Rôle (ex: Chercheur)',
+    exp_inst_placeholder: 'Institution (ex: Sorbonne)',
+    exp_desc_placeholder: 'Description des activités',
+    exp_period_placeholder: 'Période (ex: 2022 - Présent)',
+    no_experiences: 'Aucune expérience enregistrée.',
+    save_experiences: 'Enregistrer les expériences',
+    experience_label: 'Expérience',
   },
   it: {
     // Tab bar
@@ -665,6 +701,15 @@ const translations = {
     level_label: 'Livello',
     xp_label: 'XP accumulati',
     bio_dev: 'Modifica la tua biografia, istituzione e stato',
+    academic_experiences_title: 'Info Accademiche',
+    add_experience: 'Aggiungi Esperienza',
+    exp_title_placeholder: 'Titolo/Ruolo (es: Ricercatore)',
+    exp_inst_placeholder: 'Istituzione (es: UniMi)',
+    exp_desc_placeholder: 'Descrizione delle attività',
+    exp_period_placeholder: 'Periodo (es: 2022 - Presente)',
+    no_experiences: 'Nessuna esperienza registrata.',
+    save_experiences: 'Salva Esperienze',
+    experience_label: 'Esperienza',
   },
   zh: {
     // Tab bar
@@ -798,6 +843,15 @@ const translations = {
     level_label: '等级',
     xp_label: '累计经验值',
     bio_dev: '编辑您的个人简介、机构和状态',
+    academic_experiences_title: '学术信息',
+    add_experience: '添加经历',
+    exp_title_placeholder: '头衔/职位（例如：研究员）',
+    exp_inst_placeholder: '机构（例如：清华大学）',
+    exp_desc_placeholder: '活动描述',
+    exp_period_placeholder: '时期（例如：2022 - 至今）',
+    no_experiences: '未添加任何经历。',
+    save_experiences: '保存经历',
+    experience_label: '经验/经历',
   },
   ko: {
     // Tab bar
@@ -931,6 +985,15 @@ const translations = {
     level_label: '레벨',
     xp_label: '누적 XP',
     bio_dev: '자기 소개, 기관 및 상태 수정',
+    academic_experiences_title: '학술 정보',
+    add_experience: '경력 추가',
+    exp_title_placeholder: '직책/역할 (예: 연구원)',
+    exp_inst_placeholder: '기관 (예: 서울대)',
+    exp_desc_placeholder: '활동 내용 설명',
+    exp_period_placeholder: '기간 (예: 2022 - 현재)',
+    no_experiences: '등록된 경력이 없습니다.',
+    save_experiences: '경력 저장',
+    experience_label: '경력',
   }
 };
 

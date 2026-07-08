@@ -48,12 +48,20 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [updatingPhoto, setUpdatingPhoto] = useState(false);
 
-  // States para Bio, Status e Instituição
+  // States para Bio, Status, Instituição e Experiências
   const [bioText, setBioText] = useState('');
   const [statusText, setStatusText] = useState('');
   const [instituicaoText, setInstituicaoText] = useState('');
+  const [experiences, setExperiences] = useState([]);
   const [showProfileCard, setShowProfileCard] = useState(false);
   const [savingBio, setSavingBio] = useState(false);
+  const [savingAcademic, setSavingAcademic] = useState(false);
+
+  // States para Nova Experiência
+  const [newExpTitle, setNewExpTitle] = useState('');
+  const [newExpInst, setNewExpInst] = useState('');
+  const [newExpDesc, setNewExpDesc] = useState('');
+  const [newExpPeriod, setNewExpPeriod] = useState('');
 
   useEffect(() => {
     if (!isGuest && user) {
@@ -102,15 +110,18 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
             setBioText(parsed.bioText || '');
             setStatusText(parsed.statusText || '');
             setInstituicaoText(parsed.instituicaoText || '');
+            setExperiences(parsed.experiences || []);
           } else {
             setBioText('');
             setStatusText('');
             setInstituicaoText('');
+            setExperiences([]);
           }
         } catch (e) {
           setBioText(profileData.bio || '');
           setStatusText('');
           setInstituicaoText('');
+          setExperiences([]);
         }
       } else {
         setProfile({
@@ -134,7 +145,8 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
       const bioPayload = JSON.stringify({
         bioText,
         statusText,
-        instituicaoText
+        instituicaoText,
+        experiences // Retain current experiences list
       });
       await dataService.updateBio(user.id, bioPayload);
       Alert.alert('Sucesso', 'Alterações salvas!');
@@ -145,6 +157,55 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
     } finally {
       setSavingBio(false);
     }
+  };
+
+  const handleSaveExperiences = async (updatedExps) => {
+    setSavingAcademic(true);
+    try {
+      const bioPayload = JSON.stringify({
+        bioText,
+        statusText,
+        instituicaoText,
+        experiences: updatedExps
+      });
+      await dataService.updateBio(user.id, bioPayload);
+      Alert.alert('Sucesso', 'Experiências salvas!');
+      await loadProfileAndData();
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível salvar as experiências.');
+    } finally {
+      setSavingAcademic(false);
+    }
+  };
+
+  const handleAddExperience = () => {
+    if (!newExpTitle.trim() || !newExpInst.trim()) {
+      Alert.alert('Erro', 'Por favor, preencha pelo menos Título e Instituição.');
+      return;
+    }
+    const newExp = {
+      id: Date.now().toString(),
+      title: newExpTitle,
+      institution: newExpInst,
+      description: newExpDesc,
+      period: newExpPeriod
+    };
+    const updated = [...experiences, newExp];
+    setExperiences(updated);
+    
+    // Clear inputs
+    setNewExpTitle('');
+    setNewExpInst('');
+    setNewExpDesc('');
+    setNewExpPeriod('');
+    
+    handleSaveExperiences(updated);
+  };
+
+  const handleDeleteExperience = (expId) => {
+    const updated = experiences.filter(exp => exp.id !== expId);
+    setExperiences(updated);
+    handleSaveExperiences(updated);
   };
 
   const handleChangePassword = async () => {
@@ -524,6 +585,86 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
     );
   }
 
+  if (currentView === 'academicInfo') {
+    return (
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
+        <View style={styles.subHeader}>
+          <TouchableOpacity onPress={() => setCurrentView('menu')} style={styles.backButton}>
+            <Text style={styles.backButtonText}>{t('back')}</Text>
+          </TouchableOpacity>
+          <Text style={styles.subTitle}>{t('academic_experiences_title')}</Text>
+        </View>
+        <ScrollView contentContainerStyle={styles.formPadding} keyboardShouldPersistTaps="handled">
+          
+          <View style={styles.experienceFormCard}>
+            <Text style={styles.experienceFormTitle}>{t('add_experience')}</Text>
+            
+            <TextInput
+              style={styles.experienceInput}
+              placeholder={t('exp_title_placeholder')}
+              placeholderTextColor={theme.colors.textSecondary}
+              value={newExpTitle}
+              onChangeText={setNewExpTitle}
+            />
+
+            <TextInput
+              style={styles.experienceInput}
+              placeholder={t('exp_inst_placeholder')}
+              placeholderTextColor={theme.colors.textSecondary}
+              value={newExpInst}
+              onChangeText={setNewExpInst}
+            />
+
+            <TextInput
+              style={styles.experienceInput}
+              placeholder={t('exp_period_placeholder')}
+              placeholderTextColor={theme.colors.textSecondary}
+              value={newExpPeriod}
+              onChangeText={setNewExpPeriod}
+            />
+
+            <TextInput
+              style={[styles.experienceInput, { height: 60, textAlignVertical: 'top' }]}
+              placeholder={t('exp_desc_placeholder')}
+              placeholderTextColor={theme.colors.textSecondary}
+              multiline
+              value={newExpDesc}
+              onChangeText={setNewExpDesc}
+            />
+
+            <TouchableOpacity style={styles.experienceAddButton} onPress={handleAddExperience} disabled={savingAcademic}>
+              {savingAcademic ? <ActivityIndicator color="#FFF" /> : <Text style={styles.experienceAddButtonText}>{t('add_experience')}</Text>}
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ marginTop: 24, paddingBottom: 60 }}>
+            {experiences.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>{t('no_experiences')}</Text>
+              </View>
+            ) : (
+              experiences.map((exp) => (
+                <View key={exp.id} style={styles.experienceCard}>
+                  <View style={styles.experienceCardHeader}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.experienceCardTitle}>{exp.title}</Text>
+                      <Text style={styles.experienceCardInstitution}>{exp.institution}</Text>
+                      {exp.period ? <Text style={styles.experienceCardPeriod}>{exp.period}</Text> : null}
+                    </View>
+                    <TouchableOpacity style={styles.experienceDeleteButton} onPress={() => handleDeleteExperience(exp.id)}>
+                      <Text style={styles.experienceDeleteButtonText}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                  {exp.description ? <Text style={styles.experienceCardDesc}>{exp.description}</Text> : null}
+                </View>
+              ))
+            )}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  }
+
   // --- MAIN MENU VIEW ---
 
   return (
@@ -573,13 +714,13 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
               <Text style={styles.menuArrow}>›</Text>
             </TouchableOpacity>
             <View style={styles.separator} />
-            <TouchableOpacity style={styles.menuItem} onPress={() => Alert.alert(t('coming_soon'), 'Informações Acadêmicas em desenvolvimento.')}>
-            <Text style={styles.menuIcon}>🎓</Text>
-            <Text style={styles.menuText}>{t('academic_info')}</Text>
-            <Text style={styles.menuArrow}>›</Text>
-          </TouchableOpacity>
-          <View style={styles.separator} />
-          <TouchableOpacity style={styles.menuItem} onPress={() => setCurrentView('addPhoto')}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => setCurrentView('academicInfo')}>
+              <Text style={styles.menuIcon}>🎓</Text>
+              <Text style={styles.menuText}>{t('academic_info')}</Text>
+              <Text style={styles.menuArrow}>›</Text>
+            </TouchableOpacity>
+            <View style={styles.separator} />
+            <TouchableOpacity style={styles.menuItem} onPress={() => setCurrentView('addPhoto')}>
             <Text style={styles.menuIcon}>📷</Text>
             <Text style={styles.menuText}>{t('profile_photo')}</Text>
             <Text style={styles.menuArrow}>›</Text>
@@ -671,6 +812,19 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout }) {
                 <Text style={styles.cardDetailLabel}>⚡ {t('xp_label')}</Text>
                 <Text style={styles.cardDetailValue}>{profile?.xp || 0} XP</Text>
               </View>
+
+              {experiences.length > 0 ? (
+                <View style={styles.cardExperiencesSection}>
+                  <Text style={styles.cardDetailLabel}>💼 {t('academic_experiences_title')}</Text>
+                  {experiences.map((exp) => (
+                    <View key={exp.id} style={styles.cardExperienceItem}>
+                      <Text style={styles.cardExperienceTitle}>{exp.title} @ {exp.institution}</Text>
+                      {exp.period ? <Text style={styles.cardExperiencePeriod}>{exp.period}</Text> : null}
+                      {exp.description ? <Text style={styles.cardExperienceDesc}>{exp.description}</Text> : null}
+                    </View>
+                  ))}
+                </View>
+              ) : null}
 
               {bioText ? (
                 <View style={styles.cardBioSection}>
@@ -766,4 +920,22 @@ const styles = StyleSheet.create({
   statusBadgeItemSelected: { borderColor: theme.colors.primary, backgroundColor: 'rgba(52, 199, 89, 0.1)' },
   statusBadgeEmoji: { fontSize: 16, marginRight: 6 },
   statusBadgeText: { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '500' },
+  experienceFormCard: { backgroundColor: theme.colors.surface, borderRadius: 16, padding: 16, ...theme.shadows.soft },
+  experienceFormTitle: { color: theme.colors.textPrimary, fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
+  experienceInput: { backgroundColor: theme.colors.background, borderRadius: 8, padding: 12, color: theme.colors.textPrimary, fontSize: 15, marginBottom: 10 },
+  experienceAddButton: { backgroundColor: theme.colors.primary, borderRadius: 8, padding: 12, alignItems: 'center' },
+  experienceAddButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
+  experienceCard: { backgroundColor: theme.colors.surface, borderRadius: 16, padding: 16, marginBottom: 12, ...theme.shadows.soft },
+  experienceCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  experienceCardTitle: { color: theme.colors.textPrimary, fontSize: 16, fontWeight: 'bold' },
+  experienceCardInstitution: { color: theme.colors.primary, fontSize: 14, fontWeight: '500', marginTop: 2 },
+  experienceCardPeriod: { color: theme.colors.textSecondary, fontSize: 12, marginTop: 2 },
+  experienceCardDesc: { color: theme.colors.textSecondary, fontSize: 13, lineHeight: 18, marginTop: 10, borderTopWidth: 1, borderTopColor: theme.colors.background, paddingTop: 8 },
+  experienceDeleteButton: { padding: 4 },
+  experienceDeleteButtonText: { color: '#FF3B30', fontSize: 16, fontWeight: 'bold' },
+  cardExperiencesSection: { marginTop: 16, borderBottomWidth: 1, borderBottomColor: theme.colors.background, paddingBottom: 16 },
+  cardExperienceItem: { marginTop: 10 },
+  cardExperienceTitle: { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '600' },
+  cardExperiencePeriod: { color: theme.colors.textSecondary, fontSize: 11, marginTop: 1 },
+  cardExperienceDesc: { color: theme.colors.textSecondary, fontSize: 12, marginTop: 2 },
 });

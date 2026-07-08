@@ -70,7 +70,7 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       <NavigationContainer>
         <View style={{ flex: 1 }}>
           <Tab.Navigator
@@ -78,8 +78,9 @@ export default function App() {
               tabBarActiveTintColor: theme.colors.primary,
               tabBarInactiveTintColor: theme.colors.textSecondary,
               tabBarStyle: {
-                backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                borderTopWidth: 0,
+                backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                borderWidth: 1,
+                borderColor: 'rgba(249, 250, 251, 0.08)',
                 height: 85,
                 paddingBottom: 25,
                 paddingTop: 10,

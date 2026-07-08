@@ -5,8 +5,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
+import { theme } from '../utils/theme';
 
-export default function Spectrogram({ isActive, color = '#2ECC71', barCount = 28 }) {
+export default function Spectrogram({ isActive, color = theme.colors.primary, barCount = 28 }) {
   const [heights] = useState(() => 
     Array.from({ length: barCount }, () => new Animated.Value(6))
   );
@@ -63,11 +64,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     height: 120,
     width: '100%',
-    backgroundColor: '#1E252B',
+    backgroundColor: theme.colors.background,
     borderRadius: 16,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#2F3C47',
+    borderColor: theme.colors.border,
   },
   bar: {
     width: 6,

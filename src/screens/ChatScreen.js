@@ -19,6 +19,7 @@ import {
   Alert,
   BackHandler,
   Keyboard,
+  Linking,
 } from 'react-native';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
@@ -87,6 +88,10 @@ export default function ChatScreen({ navigation, route }) {
 
   // Emoji picker visibility state
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+  // Fullscreen image viewer states
+  const [selectedViewerImage, setSelectedViewerImage] = useState(null);
+  const [showViewerMenu, setShowViewerMenu] = useState(false);
 
   // Close emoji picker automatically if native keyboard opens
   useEffect(() => {
@@ -761,7 +766,9 @@ export default function ChatScreen({ navigation, route }) {
                 ]}
               >
                 {isImage ? (
-                  <Image source={{ uri: imageUrl }} style={{ width: 220, height: 160, borderRadius: 10 }} resizeMode="cover" />
+                  <TouchableOpacity onPress={() => { setSelectedViewerImage(imageUrl); setShowViewerMenu(false); }}>
+                    <Image source={{ uri: imageUrl }} style={{ width: 220, height: 160, borderRadius: 10 }} resizeMode="cover" />
+                  </TouchableOpacity>
                 ) : isAudio ? (
                   <View style={{ flexDirection: 'row', alignItems: 'center', minWidth: 150, paddingVertical: 4 }}>
                     <TouchableOpacity
@@ -899,6 +906,61 @@ export default function ChatScreen({ navigation, route }) {
           />
         </View>
       )}
+      {/* ── Fullscreen Image Viewer Modal ── */}
+      <Modal
+        visible={selectedViewerImage !== null}
+        transparent={false}
+        animationType="fade"
+        onRequestClose={() => setSelectedViewerImage(null)}
+      >
+        <View style={styles.viewerContainer}>
+          {/* Transparent Header */}
+          <View style={styles.viewerHeader}>
+            <TouchableOpacity
+              style={styles.viewerCloseButton}
+              onPress={() => setSelectedViewerImage(null)}
+            >
+              <Text style={styles.viewerCloseText}>‹ Voltar</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.viewerMenuButton}
+              onPress={() => setShowViewerMenu(!showViewerMenu)}
+            >
+              <Text style={styles.viewerMenuText}>•••</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Expanded Image Body */}
+          {selectedViewerImage && (
+            <Image
+              source={{ uri: selectedViewerImage }}
+              style={styles.viewerImage}
+              resizeMode="contain"
+            />
+          )}
+
+          {/* 3-Dots Dropdown Options Menu */}
+          {showViewerMenu && (
+            <View style={styles.viewerDropdown}>
+              <TouchableOpacity
+                style={styles.viewerDropdownItem}
+                onPress={() => {
+                  setShowViewerMenu(false);
+                  if (selectedViewerImage) {
+                    Linking.openURL(selectedViewerImage).catch((e) => {
+                      console.error('Error opening image URL:', e);
+                      Alert.alert('Erro', 'Não foi possível baixar a imagem.');
+                    });
+                  }
+                }}
+              >
+                <Text style={styles.viewerDropdownText}>⬇️ Baixar Imagem</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </Modal>
     </ChatWrapper>
   );
 }
@@ -1022,5 +1084,70 @@ const styles = StyleSheet.create({
   },
   emojiText: {
     fontSize: 28,
+  },
+
+  // Image Viewer Styles
+  viewerContainer: {
+    flex: 1,
+    backgroundColor: '#000000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  viewerHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: Platform.OS === 'ios' ? 90 : 70,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: 20,
+    paddingBottom: 15,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    zIndex: 10,
+  },
+  viewerCloseButton: {
+    padding: 6,
+  },
+  viewerCloseText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  viewerMenuButton: {
+    padding: 6,
+  },
+  viewerMenuText: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  viewerImage: {
+    width: '100%',
+    height: '100%',
+  },
+  viewerDropdown: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 95 : 75,
+    right: 20,
+    backgroundColor: '#2C2C2E',
+    borderRadius: 12,
+    padding: 4,
+    minWidth: 150,
+    zIndex: 20,
+    ...theme.shadows.medium,
+  },
+  viewerDropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  viewerDropdownText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

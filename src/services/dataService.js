@@ -395,9 +395,17 @@ export const dataService = {
 
     if (msgErr) throw msgErr;
 
+    const { data: chatData } = await supabase
+      .from('chats')
+      .select('unread_count')
+      .eq('id', chatId)
+      .single();
+
+    const newUnread = (chatData?.unread_count || 0) + 1;
+
     const { error: chatErr } = await supabase
       .from('chats')
-      .update({ last_message: text })
+      .update({ last_message: text, unread_count: newUnread })
       .eq('id', chatId);
 
     if (chatErr) console.error('Error updating last message in chat:', chatErr);
@@ -415,6 +423,15 @@ export const dataService = {
 
     if (error) {
       console.error('Error marking messages as delivered:', error);
+    }
+
+    const { error: chatErr } = await supabase
+      .from('chats')
+      .update({ unread_count: 0 })
+      .eq('id', chatId);
+
+    if (chatErr) {
+      console.error('Error resetting unread count:', chatErr);
     }
   },
 

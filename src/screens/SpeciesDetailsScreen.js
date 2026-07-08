@@ -14,6 +14,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import Spectrogram from '../components/Spectrogram';
 import { dataService } from '../services/dataService';
@@ -36,6 +37,7 @@ export default function SpeciesDetailsScreen({ speciesId, onBack }) {
     });
     fetchSpeciesData();
     return () => setIsPlaying(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [speciesId]);
 
   const fetchSpeciesData = async () => {
@@ -56,8 +58,18 @@ export default function SpeciesDetailsScreen({ speciesId, onBack }) {
     if (!newCommentText.trim() || !user) return;
     try {
       const userName = user.user_metadata?.full_name || user.email.split('@')[0];
-      await dataService.addComment(speciesId, user.id, userName, newCommentText);
+      const result = await dataService.addComment(speciesId, user.id, userName, newCommentText);
       setNewCommentText('');
+      
+      // Feedback de XP
+      if (result && result.xpResult) {
+        if (result.xpResult.limitReached) {
+          Alert.alert('Limite Atingido', t('daily_limit_reached'));
+        } else if (result.xpResult.xpAdded > 0) {
+          Alert.alert('XP!', t('earned_xp').replace('{xp}', result.xpResult.xpAdded.toString()));
+        }
+      }
+      
       const cData = await dataService.getComments(speciesId);
       setComments(cData);
     } catch (error) {

@@ -49,6 +49,7 @@ export default function SoundIdScreen() {
       setTimer(0);
     }
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRecording]);
 
   const handleStartRecording = () => {
@@ -83,7 +84,17 @@ export default function SoundIdScreen() {
       return;
     }
     try {
-      await dataService.addObservation(species.id, 'Localização GPS', userId);
+      const result = await dataService.addObservation(species.id, 'Localização GPS', userId);
+      
+      // Feedback de XP
+      if (result && result.xpResult) {
+        if (result.xpResult.limitReached) {
+          Alert.alert('Limite Atingido', t('daily_limit_reached'));
+        } else if (result.xpResult.xpAdded > 0) {
+          Alert.alert('XP!', t('earned_xp').replace('{xp}', result.xpResult.xpAdded.toString()));
+        }
+      }
+      
       Alert.alert('✅ Sucesso!', t('obs_saved').replace('{species}', species.nome_popular));
       setSuggestions([]);
     } catch (error) {

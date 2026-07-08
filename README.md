@@ -95,3 +95,32 @@ To learn more about React Native, take a look at the following resources:
 - [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
 - [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
 - [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+
+# Developer Guidelines & Best Practices
+
+## 1. Native Back Navigation Rule (Android / Swipe back)
+To prevent unexpected tab switching (e.g., returning from a detailed view/menu going directly to the Dashboard instead of the parent tab lists):
+- **Requirement**: Any tab screen containing a sub-navigation state (such as an open conversation in `ChatScreen` or a settings sub-view in `LifeListScreen`) **MUST** register a React Native `BackHandler` listener.
+- **Behavior**:
+  - The listener should intercept the native Android hardware back press or iOS swipe back gesture.
+  - If a sub-view is active, close/reset it (e.g., set `selectedChat` or `currentView` to `null` / `menu`) and return `true` to block the native navigation transition.
+  - Only return `false` if the screen is already at its top-level list/view, allowing default tab switching.
+
+Example implementation:
+```javascript
+import { useEffect } from 'react';
+import { BackHandler } from 'react-native';
+
+useEffect(() => {
+  const backAction = () => {
+    if (subViewState) {
+      setSubViewState(null);
+      return true; // Prevents default navigation back
+    }
+    return false; // Allows default navigation back
+  };
+
+  const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+  return () => backHandler.remove();
+}, [subViewState]);
+```

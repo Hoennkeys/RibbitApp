@@ -17,6 +17,7 @@ import {
   ActivityIndicator,
   Modal,
   Alert,
+  BackHandler,
 } from 'react-native';
 import { theme } from '../utils/theme';
 import { useLanguage } from '../utils/i18n';
@@ -59,6 +60,24 @@ export default function ChatScreen({ navigation, route }) {
       }
     });
   }, []);
+
+  // Intercept native back press to exit active chat room
+  useEffect(() => {
+    const backAction = () => {
+      if (selectedChat) {
+        setSelectedChat(null);
+        return true;
+      }
+      return false;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, [selectedChat]);
 
   // 2. Fetch user's chats
   const loadChats = async () => {

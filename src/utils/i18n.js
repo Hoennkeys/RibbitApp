@@ -64,7 +64,6 @@ const translations = {
     chat_subtitle: 'Converse com outros pesquisadores',
     message_placeholder: 'Mensagem...',
     coming_soon: 'Em breve',
-    bio_dev: 'Funcionalidade Bio em desenvolvimento.',
 
     // Explore
     explore_title: 'Explorar Regiões',
@@ -123,6 +122,17 @@ const translations = {
     spec_play: 'OUVIR CANTO 🔊',
     spec_not_found: 'Espécie não encontrada.',
     spec_back: 'Voltar',
+    edit_bio_title: 'Editar Bio e Status',
+    bio_placeholder: 'Escreva um pouco sobre você...',
+    status_label: 'Status (Emote)',
+    institution_label: 'Instituição Acadêmica',
+    institution_placeholder: 'Ex: USP, UFRJ...',
+    save_profile: 'Salvar Alterações',
+    profile_card_title: 'Cartão de Perfil',
+    close: 'Fechar',
+    level_label: 'Nível',
+    xp_label: 'XP Acumulado',
+    bio_dev: 'Editar sua biografia, instituição e status',
   },
   en: {
     // Tab bar
@@ -187,7 +197,6 @@ const translations = {
     chat_subtitle: 'Chat with other researchers',
     message_placeholder: 'Message...',
     coming_soon: 'Coming soon',
-    bio_dev: 'Bio feature under development.',
 
     // Explore
     explore_title: 'Explore Regions',
@@ -246,6 +255,17 @@ const translations = {
     spec_play: 'LISTEN TO CALL 🔊',
     spec_not_found: 'Species not found.',
     spec_back: 'Back',
+    edit_bio_title: 'Edit Bio & Status',
+    bio_placeholder: 'Write a bit about yourself...',
+    status_label: 'Status (Emote)',
+    institution_label: 'Academic Institution',
+    institution_placeholder: 'e.g. MIT, Stanford...',
+    save_profile: 'Save Changes',
+    profile_card_title: 'Profile Card',
+    close: 'Close',
+    level_label: 'Level',
+    xp_label: 'Accumulated XP',
+    bio_dev: 'Edit your biography, institution and status',
   },
   es: {
     // Tab bar
@@ -310,7 +330,6 @@ const translations = {
     chat_subtitle: 'Chatea con otros investigadores',
     message_placeholder: 'Mensaje...',
     coming_soon: 'Próximamente',
-    bio_dev: 'Función de Bio en desarrollo.',
 
     // Explore
     explore_title: 'Explorar Regiones',
@@ -369,6 +388,17 @@ const translations = {
     spec_play: 'ESCUCHAR CANTO 🔊',
     spec_not_found: 'Especie no encontrada.',
     spec_back: 'Volver',
+    edit_bio_title: 'Editar Bio y Estado',
+    bio_placeholder: 'Escribe un poco sobre ti...',
+    status_label: 'Estado (Emote)',
+    institution_label: 'Institución Académica',
+    institution_placeholder: 'Ej: UNAM, UBA...',
+    save_profile: 'Guardar Cambios',
+    profile_card_title: 'Tarjeta de Perfil',
+    close: 'Cerrar',
+    level_label: 'Nivel',
+    xp_label: 'XP Acumulado',
+    bio_dev: 'Editar tu biografía, institución y estado',
   },
   fr: {
     // Tab bar
@@ -433,7 +463,6 @@ const translations = {
     chat_subtitle: 'Discutez avec d’autres chercheurs',
     message_placeholder: 'Message...',
     coming_soon: 'Bientôt',
-    bio_dev: 'Fonctionnalité Bio en développement.',
 
     // Explore
     explore_title: 'Explorer les régions',
@@ -492,6 +521,17 @@ const translations = {
     spec_play: 'ÉCOUTER LE CHANT 🔊',
     spec_not_found: 'Espèce non trouvée.',
     spec_back: 'Retour',
+    edit_bio_title: 'Modifier la bio et le statut',
+    bio_placeholder: 'Écrivez un peu sur vous...',
+    status_label: 'Statut (Émote)',
+    institution_label: 'Institution Académique',
+    institution_placeholder: 'Ex: Sorbonne, CNRS...',
+    save_profile: 'Enregistrer les modifications',
+    profile_card_title: 'Carte de profil',
+    close: 'Fermer',
+    level_label: 'Niveau',
+    xp_label: 'XP accumulés',
+    bio_dev: 'Modifier votre biographie, institution et statut',
   },
   it: {
     // Tab bar
@@ -556,7 +596,6 @@ const translations = {
     chat_subtitle: 'Chatta con altri ricercatori',
     message_placeholder: 'Messaggio...',
     coming_soon: 'Prossimamente',
-    bio_dev: 'Funzionalità Bio in sviluppo.',
 
     // Explore
     explore_title: 'Esplora le regioni',
@@ -615,6 +654,17 @@ const translations = {
     spec_play: 'ASCOLTA IL CANTO 🔊',
     spec_not_found: 'Specie non trovata.',
     spec_back: 'Indietro',
+    edit_bio_title: 'Modifica Bio e Stato',
+    bio_placeholder: 'Scrivi qualcosa su di te...',
+    status_label: 'Stato (Emote)',
+    institution_label: 'Istituzione Academica',
+    institution_placeholder: 'Es: UniMi, Sapienza...',
+    save_profile: 'Salva modifiche',
+    profile_card_title: 'Carta del Profilo',
+    close: 'Chiudi',
+    level_label: 'Livello',
+    xp_label: 'XP accumulati',
+    bio_dev: 'Modifica la tua biografia, istituzione e stato',
   },
   zh: {
     // Tab bar
@@ -679,7 +729,6 @@ const translations = {
     chat_subtitle: '与其他研究人员交流',
     message_placeholder: '消息...',
     coming_soon: '即将推出',
-    bio_dev: '个人简介功能正在开发中。',
 
     // Explore
     explore_title: '探索区域',
@@ -738,6 +787,17 @@ const translations = {
     spec_play: '聆听鸣叫 🔊',
     spec_not_found: '未找到该物种。',
     spec_back: '返回',
+    edit_bio_title: '编辑个人简介和状态',
+    bio_placeholder: '写一点关于您自己的介绍...',
+    status_label: '状态（表情）',
+    institution_label: '学术机构',
+    institution_placeholder: '例如：清华大学、北京大学...',
+    save_profile: '保存更改',
+    profile_card_title: '个人资料卡',
+    close: '关闭',
+    level_label: '等级',
+    xp_label: '累计经验值',
+    bio_dev: '编辑您的个人简介、机构和状态',
   },
   ko: {
     // Tab bar
@@ -802,7 +862,6 @@ const translations = {
     chat_subtitle: '다른 연구원들과 채팅하세요',
     message_placeholder: '메시지...',
     coming_soon: '곧 출시 예정',
-    bio_dev: '바이오 기능 개발 중.',
 
     // Explore
     explore_title: '지역 탐색',
@@ -861,6 +920,17 @@ const translations = {
     spec_play: '울음소리 듣기 🔊',
     spec_not_found: '종을 찾을 수 없습니다.',
     spec_back: '돌아가기',
+    edit_bio_title: '소개 및 상태 수정',
+    bio_placeholder: '자신에 대해 한 줄 적어보세요...',
+    status_label: '상태 (이모티콘)',
+    institution_label: '학술 기관',
+    institution_placeholder: '예: 서울대, 카이스트...',
+    save_profile: '변경사항 저장',
+    profile_card_title: '프로필 카드',
+    close: '닫기',
+    level_label: '레벨',
+    xp_label: '누적 XP',
+    bio_dev: '자기 소개, 기관 및 상태 수정',
   }
 };
 

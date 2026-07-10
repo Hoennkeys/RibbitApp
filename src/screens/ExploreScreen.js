@@ -13,6 +13,7 @@ import {
   FlatList,
   ScrollView,
   ActivityIndicator,
+  BackHandler,
 } from 'react-native';
 import { dataService } from '../services/dataService';
 import SpeciesDetailsScreen from './SpeciesDetailsScreen';
@@ -33,6 +34,24 @@ export default function ExploreScreen() {
   useEffect(() => {
     fetchSpecies();
   }, []);
+
+  // Intercept Android back button to return from detail sheet to list view
+  useEffect(() => {
+    const backAction = () => {
+      if (selectedSpeciesId) {
+        setSelectedSpeciesId(null);
+        return true;
+      }
+      return false;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, [selectedSpeciesId]);
 
   const fetchSpecies = async () => {
     try {

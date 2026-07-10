@@ -169,7 +169,7 @@ export const dataService = {
 
   getApprovedObservations: async () => {
     try {
-      const { data, error } = await supabase
+      const { data: obsData, error: obsErr } = await supabase
         .from('observations')
         .select(`
           *,
@@ -180,18 +180,29 @@ export const dataService = {
             tipo,
             som_tipo,
             imagem_url
-          ),
-          profiles:usuario_id (
-            id,
-            full_name,
-            avatar_url
           )
         `)
         .eq('status_revisao', 'aprovado')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (obsErr) throw obsErr;
+      if (!obsData || obsData.length === 0) return [];
+
+      const userIds = [...new Set(obsData.map(o => o.usuario_id).filter(Boolean))];
+      if (userIds.length > 0) {
+        const { data: profilesData, error: profErr } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url')
+          .in('id', userIds);
+        
+        if (!profErr && profilesData) {
+          return obsData.map(o => ({
+            ...o,
+            profiles: profilesData.find(p => p.id === o.usuario_id) || null
+          }));
+        }
+      }
+      return obsData;
     } catch (e) {
       console.error('Erro ao buscar observações aprovadas:', e.message);
       return [];
@@ -200,22 +211,31 @@ export const dataService = {
 
   getObservationsBySpeciesId: async (speciesId) => {
     try {
-      const { data, error } = await supabase
+      const { data: obsData, error: obsErr } = await supabase
         .from('observations')
-        .select(`
-          *,
-          profiles:usuario_id (
-            id,
-            full_name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .eq('especie_id', speciesId)
         .eq('status_revisao', 'aprovado')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (obsErr) throw obsErr;
+      if (!obsData || obsData.length === 0) return [];
+
+      const userIds = [...new Set(obsData.map(o => o.usuario_id).filter(Boolean))];
+      if (userIds.length > 0) {
+        const { data: profilesData, error: profErr } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url')
+          .in('id', userIds);
+        
+        if (!profErr && profilesData) {
+          return obsData.map(o => ({
+            ...o,
+            profiles: profilesData.find(p => p.id === o.usuario_id) || null
+          }));
+        }
+      }
+      return obsData;
     } catch (e) {
       console.error('Erro ao buscar observações da espécie:', e.message);
       return [];
@@ -320,16 +340,34 @@ export const dataService = {
   },
 
   getAllObservations: async () => {
-    const { data, error } = await supabase
-      .from('observations')
-      .select('*, species(*), profiles:usuario_id(full_name, avatar_url)')
-      .order('created_at', { ascending: false });
+    try {
+      const { data: obsData, error: obsErr } = await supabase
+        .from('observations')
+        .select('*, species(*)')
+        .order('created_at', { ascending: false });
 
-    if (error) {
+      if (obsErr) throw obsErr;
+      if (!obsData || obsData.length === 0) return [];
+
+      const userIds = [...new Set(obsData.map(o => o.usuario_id).filter(Boolean))];
+      if (userIds.length > 0) {
+        const { data: profilesData, error: profErr } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url')
+          .in('id', userIds);
+        
+        if (!profErr && profilesData) {
+          return obsData.map(o => ({
+            ...o,
+            profiles: profilesData.find(p => p.id === o.usuario_id) || null
+          }));
+        }
+      }
+      return obsData;
+    } catch (error) {
       console.error('Erro ao buscar todas as observações:', error);
       throw error;
     }
-    return data;
   },
 
   // --- COMENTÁRIOS ---

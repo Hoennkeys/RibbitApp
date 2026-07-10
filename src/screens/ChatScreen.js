@@ -136,12 +136,20 @@ const ObservationMessageCard = ({ observationId, isMe, navigation, playingAudioU
     let active = true;
     supabase
       .from('observations')
-      .select('*, species(nome_popular, nome_cientifico), profiles:usuario_id(full_name, avatar_url)')
+      .select('*, species(nome_popular, nome_cientifico)')
       .eq('id', observationId)
       .single()
-      .then(({ data, error }) => {
+      .then(async ({ data, error }) => {
         if (error) throw error;
-        if (active) {
+        if (active && data) {
+          if (data.usuario_id) {
+            const { data: profData } = await supabase
+              .from('profiles')
+              .select('full_name, avatar_url')
+              .eq('id', data.usuario_id)
+              .single();
+            data.profiles = profData || null;
+          }
           setObservation(data);
           setLoading(false);
         }

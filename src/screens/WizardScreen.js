@@ -3,13 +3,14 @@
 // Location: C:\Ribbit\RibbitApp\src\screens\WizardScreen.js
 // ─────────────────────────────────────────────────────────────────────────────
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  BackHandler,
 } from 'react-native';
 import { dataService } from '../services/dataService';
 import SpeciesDetailsScreen from './SpeciesDetailsScreen';
@@ -54,6 +55,24 @@ export default function WizardScreen() {
   const [answers, setAnswers] = useState({});
   const [results, setResults] = useState([]);
   const [selectedSpeciesId, setSelectedSpeciesId] = useState(null);
+
+  // Intercept Android back button to return from detail sheet to results view
+  useEffect(() => {
+    const backAction = () => {
+      if (selectedSpeciesId) {
+        setSelectedSpeciesId(null);
+        return true;
+      }
+      return false;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, [selectedSpeciesId]);
 
   const getTranslatedQuestionTitle = (step) => {
     if (step === 0) return t('question_1');
@@ -105,10 +124,43 @@ export default function WizardScreen() {
       const allSpecies = await dataService.getSpecies();
       
       const matches = allSpecies.filter(spec => {
-        const matchReg = !finalAnswers.regiao || normalizeString(spec.regiao).includes(normalizeString(finalAnswers.regiao)) || spec.nome_popular === 'Sapo-cururu';
-        const matchHab = !finalAnswers.habitat || normalizeString(spec.habitat).includes(normalizeString(finalAnswers.habitat)) || spec.nome_popular === 'Sapo-cururu';
-        const matchSom = !finalAnswers.som || normalizeString(spec.som_tipo) === normalizeString(finalAnswers.som) || spec.nome_popular === 'Sapo-cururu';
-        return matchReg && matchHab && matchSom;
+        // 1. Habitat Match (Keyword overlap based on biological traits)
+        let matchHab = true;
+        if (finalAnswers.habitat) {
+          const habNorm = normalizeString(spec.habitat);
+          if (finalAnswers.habitat === 'Área Urbana') {
+            matchHab = habNorm.includes('urban') || habNorm.includes('quintal') || habNorm.includes('casa') || habNorm.includes('construc');
+          } else if (finalAnswers.habitat === 'Florestas') {
+            matchHab = habNorm.includes('floresta') || habNorm.includes('mata') || habNorm.includes('dossel') || habNorm.includes('bromelia') || habNorm.includes('arvore') || habNorm.includes('tronco');
+          } else if (finalAnswers.habitat === 'Margens de Lagoas') {
+            matchHab = habNorm.includes('lagoa') || habNorm.includes('brejo') || habNorm.includes('rio') || habNorm.includes('riacho') || habNorm.includes('pastagem') || habNorm.includes('represa') || habNorm.includes('acude') || habNorm.includes('tanque') || habNorm.includes('agua');
+          } else if (finalAnswers.habitat === 'Serrapilheira') {
+            matchHab = habNorm.includes('serrapilheira') || habNorm.includes('chao') || habNorm.includes('solo') || habNorm.includes('folha');
+          }
+        }
+
+        // 2. Sound Match
+        let matchSom = true;
+        if (finalAnswers.som) {
+          const somNorm = normalizeString(spec.som_tipo);
+          const ansSomNorm = normalizeString(finalAnswers.som);
+          matchSom = somNorm === ansSomNorm || somNorm.includes(ansSomNorm);
+        }
+
+        // 3. Region Match (Incorporate global "Todo o Brasil" fallback for wide-range species)
+        let matchReg = true;
+        if (finalAnswers.regiao) {
+          const regNorm = normalizeString(spec.regiao);
+          if (finalAnswers.regiao === 'Sudeste') {
+            matchReg = regNorm.includes('sudeste') || regNorm.includes('centro-oeste') || regNorm.includes('sul') || regNorm.includes('brasil');
+          } else if (finalAnswers.regiao === 'Mata Atlântica') {
+            matchReg = regNorm.includes('mata atlantica') || regNorm.includes('litoral') || regNorm.includes('brasil');
+          } else if (finalAnswers.regiao === 'Cerrado') {
+            matchReg = regNorm.includes('cerrado') || regNorm.includes('caatinga') || regNorm.includes('brasil');
+          }
+        }
+
+        return matchHab && matchSom && matchReg;
       });
 
       setResults(matches);

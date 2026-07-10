@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
   TextInput,
   Image,
+  BackHandler,
 } from 'react-native';
 import Spectrogram from '../components/Spectrogram';
 import { dataService } from '../services/dataService';
@@ -89,6 +90,24 @@ export default function SoundIdScreen() {
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRecording]);
+
+  // Intercept Android back button to return from detail sheet to list view
+  useEffect(() => {
+    const backAction = () => {
+      if (selectedSpeciesId) {
+        setSelectedSpeciesId(null);
+        return true;
+      }
+      return false;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, [selectedSpeciesId]);
 
   const handleSuggestionTextChange = (text) => {
     setSuggestionText(text);

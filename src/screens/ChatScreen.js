@@ -45,6 +45,215 @@ const formatTime = (isoString) => {
   return `${hrs}:${mins}`;
 };
 
+const SpeciesMessageCard = ({ speciesId, isMe, navigation }) => {
+  const [species, setSpecies] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    dataService.getSpeciesById(speciesId)
+      .then(data => {
+        if (active) {
+          setSpecies(data);
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, [speciesId]);
+
+  if (loading) {
+    return <ActivityIndicator size="small" color={isMe ? '#FFFFFF' : theme.colors.primary} style={{ marginVertical: 10 }} />;
+  }
+
+  if (!species) {
+    return <Text style={{ color: isMe ? '#FFF' : theme.colors.textPrimary, fontSize: 13, padding: 6 }}>🐸 Espécie não encontrada</Text>;
+  }
+
+  const tagBg = species.tipo === 'Sapo' ? 'rgba(217, 119, 6, 0.15)' : species.tipo === 'Rã' ? 'rgba(0, 113, 227, 0.15)' : 'rgba(52, 199, 89, 0.15)';
+  const tagColor = species.tipo === 'Sapo' ? '#D97706' : species.tipo === 'Rã' ? '#0071E3' : '#34C759';
+
+  return (
+    <View style={{ padding: 4, minWidth: 200 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+        {species.imagem_url ? (
+          <Image source={{ uri: species.imagem_url }} style={{ width: 44, height: 44, borderRadius: 8, marginRight: 10 }} />
+        ) : (
+          <View style={{ width: 44, height: 44, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center', marginRight: 10 }}>
+            <Text style={{ fontSize: 20 }}>🐸</Text>
+          </View>
+        )}
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: isMe ? '#FFF' : theme.colors.textPrimary, fontWeight: '700', fontSize: 14 }} numberOfLines={1}>
+            {species.nome_popular}
+          </Text>
+          <Text style={{ color: isMe ? 'rgba(255,255,255,0.7)' : theme.colors.textSecondary, fontStyle: 'italic', fontSize: 11 }} numberOfLines={1}>
+            {species.nome_cientifico}
+          </Text>
+        </View>
+      </View>
+
+      <View style={{ flexDirection: 'row', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
+        <View style={{ paddingVertical: 2, paddingHorizontal: 6, borderRadius: 5, backgroundColor: tagBg }}>
+          <Text style={{ fontSize: 9.5, fontWeight: '700', color: tagColor }}>{species.tipo || 'Anfíbio'}</Text>
+        </View>
+        <View style={{ paddingVertical: 2, paddingHorizontal: 6, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.1)' }}>
+          <Text style={{ fontSize: 9.5, fontWeight: '700', color: isMe ? '#FFF' : theme.colors.textSecondary }}>📍 {species.regiao}</Text>
+        </View>
+      </View>
+
+      <TouchableOpacity
+        style={{
+          backgroundColor: isMe ? 'rgba(255,255,255,0.2)' : 'rgba(0,113,227,0.1)',
+          paddingVertical: 7,
+          borderRadius: 8,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginTop: 4,
+          borderWidth: 1,
+          borderColor: isMe ? 'rgba(255,255,255,0.25)' : 'rgba(0,113,227,0.15)',
+        }}
+        onPress={() => {
+          navigation.navigate('Biblioteca', { selectedSpeciesId: species.id });
+        }}
+      >
+        <Text style={{ color: isMe ? '#FFF' : '#0071E3', fontSize: 12, fontWeight: '700' }}>
+          Ver Ficha Técnica ›
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+const ObservationMessageCard = ({ observationId, isMe, navigation, playingAudioUrl, togglePlayAudio, playTime, playDuration }) => {
+  const [observation, setObservation] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    supabase
+      .from('observations')
+      .select('*, species(nome_popular, nome_cientifico), profiles:usuario_id(full_name, avatar_url)')
+      .eq('id', observationId)
+      .single()
+      .then(({ data, error }) => {
+        if (error) throw error;
+        if (active) {
+          setObservation(data);
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, [observationId]);
+
+  if (loading) {
+    return <ActivityIndicator size="small" color={isMe ? '#FFFFFF' : theme.colors.primary} style={{ marginVertical: 10 }} />;
+  }
+
+  if (!observation) {
+    return <Text style={{ color: isMe ? '#FFF' : theme.colors.textPrimary, fontSize: 13, padding: 6 }}>🎙️ Gravação não encontrada</Text>;
+  }
+
+  const popularName = observation.species?.nome_popular || observation.sugestao || 'Espécie Não Identificada';
+  const isCurrentPlaying = playingAudioUrl === observation.audio_url;
+  
+  const getProgressWidth = () => {
+    if (!isCurrentPlaying || !playTime || !playDuration) return 0;
+    const [pm, ps] = playTime.split(':').map(Number);
+    const [dm, ds] = playDuration.split(':').map(Number);
+    const playSec = pm * 60 + ps;
+    const durSec = dm * 60 + ds;
+    return durSec > 0 ? (playSec / durSec) * 100 : 0;
+  };
+
+  return (
+    <View style={{ padding: 4, minWidth: 200 }}>
+      <Text style={{ color: isMe ? 'rgba(255,255,255,0.7)' : theme.colors.textSecondary, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>
+        🎙️ Gravação Coletada
+      </Text>
+
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+        {observation.profiles?.avatar_url ? (
+          <Image source={{ uri: observation.profiles.avatar_url }} style={{ width: 34, height: 34, borderRadius: 17, marginRight: 8 }} />
+        ) : (
+          <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center', marginRight: 8 }}>
+            <Text style={{ color: isMe ? '#FFF' : theme.colors.primary, fontSize: 13, fontWeight: '700' }}>
+              {(observation.profiles?.full_name || 'U').charAt(0).toUpperCase()}
+            </Text>
+          </View>
+        )}
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: isMe ? '#FFF' : theme.colors.textPrimary, fontWeight: '600', fontSize: 13.5 }} numberOfLines={1}>
+            {popularName}
+          </Text>
+          <Text style={{ color: isMe ? 'rgba(255,255,255,0.7)' : theme.colors.textSecondary, fontSize: 11 }} numberOfLines={1}>
+            📍 {observation.localizacao || 'Mata Atlântica'}
+          </Text>
+        </View>
+      </View>
+
+      {/* Audio playback controls inside bubble */}
+      {observation.audio_url && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 6 }}>
+          <TouchableOpacity
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 16,
+              backgroundColor: isMe ? 'rgba(255,255,255,0.25)' : theme.colors.primary,
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginRight: 8
+            }}
+            onPress={() => togglePlayAudio(observation.audio_url)}
+          >
+            <Text style={{ fontSize: 14, color: '#FFF' }}>
+              {isCurrentPlaying ? '⏸️' : '▶️'}
+            </Text>
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <View style={{ height: 4, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 2, overflow: 'hidden' }}>
+              <View style={{ height: '100%', backgroundColor: isMe ? '#FFF' : theme.colors.primary, width: `${getProgressWidth()}%` }} />
+            </View>
+            <Text style={{ fontSize: 9, color: isMe ? 'rgba(255,255,255,0.7)' : theme.colors.textSecondary, marginTop: 3 }}>
+              {isCurrentPlaying ? `${playTime} / ${playDuration}` : 'Ouvir canto gravado'}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {observation.especie_id && (
+        <TouchableOpacity
+          style={{
+            backgroundColor: isMe ? 'rgba(255,255,255,0.2)' : 'rgba(52, 199, 89, 0.1)',
+            paddingVertical: 5,
+            borderRadius: 7,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginTop: 4,
+            borderWidth: 1,
+            borderColor: isMe ? 'rgba(255,255,255,0.25)' : 'rgba(52, 199, 89, 0.15)',
+          }}
+          onPress={() => {
+            navigation.navigate('Biblioteca', { selectedSpeciesId: observation.especie_id });
+          }}
+        >
+          <Text style={{ color: isMe ? '#FFF' : theme.colors.primary, fontSize: 11, fontWeight: '700' }}>
+            Ver Espécie na Biblioteca ›
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+};
+
 export default function ChatScreen({ navigation, route }) {
   const { t } = useLanguage();
   const [currentUser, setCurrentUser] = useState(null);
@@ -778,8 +987,15 @@ export default function ChatScreen({ navigation, route }) {
             // Detecta tipo de mensagem
             const isImage = item.text.startsWith('[image]:');
             const isAudio = item.text.startsWith('[audio]:');
+            const isSpecies = item.text.startsWith('[species]:');
+            const isObservation = item.text.startsWith('[observation]:');
+
             const imageUrl = isImage ? item.text.substring(8) : null;
             const audioUrl = isAudio ? item.text.substring(8) : null;
+            const speciesId = isSpecies ? item.text.substring(10) : null;
+            const obsId = isObservation ? item.text.substring(14) : null;
+
+            const isCard = isSpecies || isObservation;
 
             return (
               <View
@@ -787,6 +1003,7 @@ export default function ChatScreen({ navigation, route }) {
                   styles.messageBubble,
                   isMe ? styles.myBubble : styles.otherBubble,
                   isImage && { padding: 4, borderRadius: 12 }, // Estilo mais limpo para imagens
+                  isCard && { padding: 8, borderRadius: 16, minWidth: 220, backgroundColor: isMe ? '#0D1B2A' : '#1B263B', borderWidth: 1, borderColor: isMe ? 'rgba(52, 199, 89, 0.3)' : 'rgba(255,255,255,0.08)' },
                 ]}
               >
                 {isImage ? (
@@ -842,6 +1059,18 @@ export default function ChatScreen({ navigation, route }) {
                       </TouchableOpacity>
                     )}
                   </View>
+                ) : isSpecies ? (
+                  <SpeciesMessageCard speciesId={speciesId} isMe={isMe} navigation={navigation} />
+                ) : isObservation ? (
+                  <ObservationMessageCard 
+                    observationId={obsId} 
+                    isMe={isMe} 
+                    navigation={navigation} 
+                    playingAudioUrl={playingAudioUrl} 
+                    togglePlayAudio={togglePlayAudio}
+                    playTime={playTime}
+                    playDuration={playDuration}
+                  />
                 ) : (
                   <Text
                     style={[

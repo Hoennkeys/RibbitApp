@@ -95,14 +95,20 @@ export default function WizardScreen() {
     }
   };
 
+  const normalizeString = (str) => {
+    if (!str) return '';
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  };
+
   const showSuggestions = async (finalAnswers) => {
     try {
       const allSpecies = await dataService.getSpecies();
       
       const matches = allSpecies.filter(spec => {
-        const matchReg = !finalAnswers.regiao || spec.regiao.toLowerCase().includes(finalAnswers.regiao.toLowerCase()) || spec.nome_popular === 'Sapo-cururu';
-        const matchHab = !finalAnswers.habitat || spec.habitat.toLowerCase().includes(finalAnswers.habitat.toLowerCase()) || spec.nome_popular === 'Sapo-cururu';
-        return matchReg || matchHab;
+        const matchReg = !finalAnswers.regiao || normalizeString(spec.regiao).includes(normalizeString(finalAnswers.regiao)) || spec.nome_popular === 'Sapo-cururu';
+        const matchHab = !finalAnswers.habitat || normalizeString(spec.habitat).includes(normalizeString(finalAnswers.habitat)) || spec.nome_popular === 'Sapo-cururu';
+        const matchSom = !finalAnswers.som || normalizeString(spec.som_tipo) === normalizeString(finalAnswers.som) || spec.nome_popular === 'Sapo-cururu';
+        return matchReg && matchHab && matchSom;
       });
 
       setResults(matches);

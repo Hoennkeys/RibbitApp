@@ -56,7 +56,14 @@ export default function SoundIdScreen() {
   const [selectedSpeciesId, setSelectedSpeciesId] = useState(null);
   const [userId, setUserId] = useState(null);
 
+  const [speciesList, setSpeciesList] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+
   useEffect(() => {
+    dataService.getSpecies().then(data => {
+      setSpeciesList(data);
+    }).catch(err => console.error(err));
+
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         setUserId(user.id);
@@ -82,6 +89,20 @@ export default function SoundIdScreen() {
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRecording]);
+
+  const handleSuggestionTextChange = (text) => {
+    setSuggestionText(text);
+    if (!text.trim()) {
+      setSuggestions([]);
+      return;
+    }
+    const q = text.toLowerCase().trim();
+    const filtered = speciesList.filter(s =>
+      s.nome_popular.toLowerCase().includes(q) ||
+      s.nome_cientifico.toLowerCase().includes(q)
+    );
+    setSuggestions(filtered.slice(0, 5));
+  };
 
   const handleStartRecording = () => {
     setMatchedSpecies(null);
@@ -156,12 +177,13 @@ export default function SoundIdScreen() {
       setAnalysisStep('');
 
       if (matchChance >= 80 && allSpecies.length > 0) {
-        // High confidence match
-        const match = allSpecies[0]; // Map to first species (usually Sapo-cururu)
+        // High confidence match — pick a random species from the list
+        const randomIndex = Math.floor(Math.random() * allSpecies.length);
+        const match = allSpecies[randomIndex];
         setMatchedSpecies({
           ...match,
           matchChance,
-          image: getSpeciesImage(match.id, match.nome_popular)
+          image: match.imagem_url || getSpeciesImage(match.id, match.nome_popular)
         });
         // Create public storage mock link
         setLastUploadedAudioUrl(`https://wopqlnjextgodfvvmapc.supabase.co/storage/v1/object/public/sons/mock-audio-${match.id}.mp3`);
@@ -362,8 +384,27 @@ export default function SoundIdScreen() {
             placeholder="Nome científico ou popular..."
             placeholderTextColor={theme.colors.textSecondary}
             value={suggestionText}
-            onChangeText={setSuggestionText}
+            onChangeText={handleSuggestionTextChange}
           />
+
+          {suggestions.length > 0 && (
+            <View style={styles.suggestionsContainer}>
+              {suggestions.map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.suggestionItem}
+                  onPress={() => {
+                    setSuggestionText(item.nome_popular);
+                    setSuggestions([]);
+                  }}
+                >
+                  <Text style={styles.suggestionItemText}>
+                    🐸 {item.nome_popular} ({item.nome_cientifico})
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
 
           <TouchableOpacity
             style={styles.submitSuggestionBtn}
@@ -693,5 +734,25 @@ const styles = StyleSheet.create({
     color: '#FF9500',
     fontSize: 12,
     fontWeight: '700',
+  },
+  suggestionsContainer: {
+    backgroundColor: '#0F172A',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    marginTop: -8,
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  suggestionItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  suggestionItemText: {
+    color: theme.colors.textPrimary,
+    fontSize: 13.5,
+    fontWeight: '500',
   },
 });

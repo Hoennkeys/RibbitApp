@@ -169,38 +169,36 @@ export const dataService = {
 
   getApprovedObservations: async () => {
     try {
+      // 1. Fetch approved observations (no join — species columns may not exist in production yet)
       const { data: obsData, error: obsErr } = await supabase
         .from('observations')
-        .select(`
-          *,
-          species (
-            id,
-            nome_popular,
-            nome_cientifico,
-            imagem_url
-          )
-        `)
+        .select('*')
         .eq('status_revisao', 'aprovado')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(20);
 
       if (obsErr) throw obsErr;
       if (!obsData || obsData.length === 0) return [];
 
+      // 2. Fetch profiles separately to avoid PostgREST join issues
       const userIds = [...new Set(obsData.map(o => o.usuario_id).filter(Boolean))];
+      let profilesMap = {};
       if (userIds.length > 0) {
-        const { data: profilesData, error: profErr } = await supabase
+        const { data: profilesData } = await supabase
           .from('profiles')
           .select('id, full_name, avatar_url')
           .in('id', userIds);
-        
-        if (!profErr && profilesData) {
-          return obsData.map(o => ({
-            ...o,
-            profiles: profilesData.find(p => p.id === o.usuario_id) || null
-          }));
+        if (profilesData) {
+          profilesData.forEach(p => { profilesMap[p.id] = p; });
         }
       }
-      return obsData;
+
+      // 3. Enrich with local species data (fallback) matched by especie_id
+      return obsData.map(o => ({
+        ...o,
+        profiles: profilesMap[o.usuario_id] || null,
+        species: LOCAL_SPECIES_FALLBACK.find(s => String(s.id) === String(o.especie_id)) || null,
+      }));
     } catch (e) {
       console.error('Erro ao buscar observações aprovadas:', e.message);
       return [];

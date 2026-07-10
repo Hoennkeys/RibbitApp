@@ -13,7 +13,7 @@ ALTER TABLE public.species ADD COLUMN IF NOT EXISTS fatos_curiosos text;
 -- 2. Criar a tabela de histórico de alterações de espécies (Auditoria/Versionamento)
 CREATE TABLE IF NOT EXISTS public.species_history (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  species_id uuid,
+  species_id bigint,
   usuario_id uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
   acao text NOT null CHECK (acao IN ('criacao', 'edicao', 'exclusao')),
   detalhes jsonb,
@@ -42,7 +42,7 @@ DELETE FROM public.species;
 -- 4. Inserir dados de semente (10 espécies herpetológicas brasileiras)
 INSERT INTO public.species (id, nome_popular, nome_cientifico, regiao, habitat, descricao, fatos_curiosos, tipo, som_tipo, imagem_url) VALUES
 (
-  'e0d7c71e-080c-4074-ba0d-66cd5f5d0001',
+  1,
   'Sapo-cururu',
   'Rhinella diptycha',
   'Todo o Brasil',
@@ -54,7 +54,7 @@ INSERT INTO public.species (id, nome_popular, nome_cientifico, regiao, habitat, 
   'https://images.unsplash.com/photo-1563200921-774f2662c16c?w=600&auto=format&fit=crop'
 ),
 (
-  'e0d7c71e-080c-4074-ba0d-66cd5f5d0002',
+  2,
   'Perereca-de-banheiro',
   'Boana albopunctata',
   'Sudeste e Centro-Oeste',
@@ -66,7 +66,7 @@ INSERT INTO public.species (id, nome_popular, nome_cientifico, regiao, habitat, 
   'https://images.unsplash.com/photo-1579380656108-f98e4df8ea62?w=600&auto=format&fit=crop'
 ),
 (
-  'e0d7c71e-080c-4074-ba0d-66cd5f5d0003',
+  3,
   'Rã-manteiga',
   'Leptodactylus latrans',
   'Cerrado e Caatinga',
@@ -78,7 +78,7 @@ INSERT INTO public.species (id, nome_popular, nome_cientifico, regiao, habitat, 
   'https://images.unsplash.com/photo-1622273464529-65123d573ebc?w=600&auto=format&fit=crop'
 ),
 (
-  'e0d7c71e-080c-4074-ba0d-66cd5f5d0004',
+  4,
   'Sapinho-pingo-de-ouro',
   'Brachycephalus ephippium',
   'Mata Atlântica',
@@ -90,7 +90,7 @@ INSERT INTO public.species (id, nome_popular, nome_cientifico, regiao, habitat, 
   'https://images.unsplash.com/photo-1507608869274-d3177c8bb4c7?w=600&auto=format&fit=crop'
 ),
 (
-  'e0d7c71e-080c-4074-ba0d-66cd5f5d0005',
+  5,
   'Rã-touro',
   'Lithobates catesbeianus',
   'Sul e Sudeste',
@@ -102,7 +102,7 @@ INSERT INTO public.species (id, nome_popular, nome_cientifico, regiao, habitat, 
   'https://images.unsplash.com/photo-1551085254-e96b210db58a?w=600&auto=format&fit=crop'
 ),
 (
-  'e0d7c71e-080c-4074-ba0d-66cd5f5d0006',
+  6,
   'Perereca-leiteira',
   'Trachycephalus typhonius',
   'Norte e Nordeste',
@@ -114,7 +114,7 @@ INSERT INTO public.species (id, nome_popular, nome_cientifico, regiao, habitat, 
   'https://images.unsplash.com/photo-1550147760-44c9966d6bc7?w=600&auto=format&fit=crop'
 ),
 (
-  'e0d7c71e-080c-4074-ba0d-66cd5f5d0007',
+  7,
   'Sapo-cururu-amarelo',
   'Rhinella icterica',
   'Sudeste e Sul',
@@ -126,11 +126,11 @@ INSERT INTO public.species (id, nome_popular, nome_cientifico, regiao, habitat, 
   'https://images.unsplash.com/photo-1590005354167-6da97870c913?w=600&auto=format&fit=crop'
 ),
 (
-  'e0d7c71e-080c-4074-ba0d-66cd5f5d0008',
+  8,
   'Rã-cachorrinho',
   'Physalaemus cuvieri',
   'Todo o Brasil',
-  'Brejos temporários, poças d''água rasas e pastagens abertas',
+  'Brejos temporários, poças d\'água rasas e pastagens abertas',
   'Pequena rã terrestre de hábitos noturnos e coloração cinza a marrom. Seu coaxar é muito marcante na herpetofauna brasileira, assemelhando-se exatamente ao latido agudo e rápido de um cachorrinho novo.',
   'Fazem ninhos de espuma flutuantes e densos em poças rasas para abrigar seus ovos. Seus girinos se desenvolvem muito rápido para escapar antes que as poças temporárias sequem totalmente.',
   'Rã',
@@ -138,7 +138,7 @@ INSERT INTO public.species (id, nome_popular, nome_cientifico, regiao, habitat, 
   'https://images.unsplash.com/photo-1512438248247-f0f2a5a8b7f0?w=600&auto=format&fit=crop'
 ),
 (
-  'e0d7c71e-080c-4074-ba0d-66cd5f5d0009',
+  9,
   'Perereca-de-vidro',
   'Teratohyla spinosa',
   'Norte e Litoral do Brasil',
@@ -150,7 +150,7 @@ INSERT INTO public.species (id, nome_popular, nome_cientifico, regiao, habitat, 
   'https://images.unsplash.com/photo-1548247416-ec66f4900b2e?w=600&auto=format&fit=crop'
 ),
 (
-  'e0d7c71e-080c-4074-ba0d-66cd5f5d0010',
+  10,
   'Perereca-verde',
   'Aplastodiscus arildae',
   'Mata Atlântica',

@@ -9,7 +9,7 @@ import supabase from './supabaseClient';
 
 const LOCAL_SPECIES_FALLBACK = [
   {
-    id: 'e0d7c71e-080c-4074-ba0d-66cd5f5d0001',
+    id: '1',
     nome_popular: 'Sapo-cururu',
     nome_cientifico: 'Rhinella diptycha',
     regiao: 'Todo o Brasil',
@@ -21,7 +21,7 @@ const LOCAL_SPECIES_FALLBACK = [
     imagem_url: 'https://images.unsplash.com/photo-1563200921-774f2662c16c?w=600&auto=format&fit=crop'
   },
   {
-    id: 'e0d7c71e-080c-4074-ba0d-66cd5f5d0002',
+    id: '2',
     nome_popular: 'Perereca-de-banheiro',
     nome_cientifico: 'Boana albopunctata',
     regiao: 'Sudeste e Centro-Oeste',
@@ -33,7 +33,7 @@ const LOCAL_SPECIES_FALLBACK = [
     imagem_url: 'https://images.unsplash.com/photo-1579380656108-f98e4df8ea62?w=600&auto=format&fit=crop'
   },
   {
-    id: 'e0d7c71e-080c-4074-ba0d-66cd5f5d0003',
+    id: '3',
     nome_popular: 'Rã-manteiga',
     nome_cientifico: 'Leptodactylus latrans',
     regiao: 'Cerrado e Caatinga',
@@ -45,7 +45,7 @@ const LOCAL_SPECIES_FALLBACK = [
     imagem_url: 'https://images.unsplash.com/photo-1622273464529-65123d573ebc?w=600&auto=format&fit=crop'
   },
   {
-    id: 'e0d7c71e-080c-4074-ba0d-66cd5f5d0004',
+    id: '4',
     nome_popular: 'Sapinho-pingo-de-ouro',
     nome_cientifico: 'Brachycephalus ephippium',
     regiao: 'Mata Atlântica',
@@ -57,7 +57,7 @@ const LOCAL_SPECIES_FALLBACK = [
     imagem_url: 'https://images.unsplash.com/photo-1507608869274-d3177c8bb4c7?w=600&auto=format&fit=crop'
   },
   {
-    id: 'e0d7c71e-080c-4074-ba0d-66cd5f5d0005',
+    id: '5',
     nome_popular: 'Rã-touro',
     nome_cientifico: 'Lithobates catesbeianus',
     regiao: 'Sul e Sudeste',
@@ -69,7 +69,7 @@ const LOCAL_SPECIES_FALLBACK = [
     imagem_url: 'https://images.unsplash.com/photo-1551085254-e96b210db58a?w=600&auto=format&fit=crop'
   },
   {
-    id: 'e0d7c71e-080c-4074-ba0d-66cd5f5d0006',
+    id: '6',
     nome_popular: 'Perereca-leiteira',
     nome_cientifico: 'Trachycephalus typhonius',
     regiao: 'Norte e Nordeste',
@@ -81,7 +81,7 @@ const LOCAL_SPECIES_FALLBACK = [
     imagem_url: 'https://images.unsplash.com/photo-1550147760-44c9966d6bc7?w=600&auto=format&fit=crop'
   },
   {
-    id: 'e0d7c71e-080c-4074-ba0d-66cd5f5d0007',
+    id: '7',
     nome_popular: 'Sapo-cururu-amarelo',
     nome_cientifico: 'Rhinella icterica',
     regiao: 'Sudeste e Sul',
@@ -93,7 +93,7 @@ const LOCAL_SPECIES_FALLBACK = [
     imagem_url: 'https://images.unsplash.com/photo-1590005354167-6da97870c913?w=600&auto=format&fit=crop'
   },
   {
-    id: 'e0d7c71e-080c-4074-ba0d-66cd5f5d0008',
+    id: '8',
     nome_popular: 'Rã-cachorrinho',
     nome_cientifico: 'Physalaemus cuvieri',
     regiao: 'Todo o Brasil',
@@ -105,7 +105,7 @@ const LOCAL_SPECIES_FALLBACK = [
     imagem_url: 'https://images.unsplash.com/photo-1512438248247-f0f2a5a8b7f0?w=600&auto=format&fit=crop'
   },
   {
-    id: 'e0d7c71e-080c-4074-ba0d-66cd5f5d0009',
+    id: '9',
     nome_popular: 'Perereca-de-vidro',
     nome_cientifico: 'Teratohyla spinosa',
     regiao: 'Norte e Litoral do Brasil',
@@ -117,7 +117,7 @@ const LOCAL_SPECIES_FALLBACK = [
     imagem_url: 'https://images.unsplash.com/photo-1548247416-ec66f4900b2e?w=600&auto=format&fit=crop'
   },
   {
-    id: 'e0d7c71e-080c-4074-ba0d-66cd5f5d0010',
+    id: '10',
     nome_popular: 'Perereca-verde',
     nome_cientifico: 'Aplastodiscus arildae',
     regiao: 'Mata Atlântica',
@@ -169,7 +169,7 @@ export const dataService = {
 
   getApprovedObservations: async () => {
     try {
-      const { data, error } = await supabase
+      const { data: obsData, error: obsErr } = await supabase
         .from('observations')
         .select(`
           *,
@@ -180,18 +180,29 @@ export const dataService = {
             tipo,
             som_tipo,
             imagem_url
-          ),
-          profiles:usuario_id (
-            id,
-            full_name,
-            avatar_url
           )
         `)
         .eq('status_revisao', 'aprovado')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (obsErr) throw obsErr;
+      if (!obsData || obsData.length === 0) return [];
+
+      const userIds = [...new Set(obsData.map(o => o.usuario_id).filter(Boolean))];
+      if (userIds.length > 0) {
+        const { data: profilesData, error: profErr } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url')
+          .in('id', userIds);
+        
+        if (!profErr && profilesData) {
+          return obsData.map(o => ({
+            ...o,
+            profiles: profilesData.find(p => p.id === o.usuario_id) || null
+          }));
+        }
+      }
+      return obsData;
     } catch (e) {
       console.error('Erro ao buscar observações aprovadas:', e.message);
       return [];
@@ -200,22 +211,31 @@ export const dataService = {
 
   getObservationsBySpeciesId: async (speciesId) => {
     try {
-      const { data, error } = await supabase
+      const { data: obsData, error: obsErr } = await supabase
         .from('observations')
-        .select(`
-          *,
-          profiles:usuario_id (
-            id,
-            full_name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .eq('especie_id', speciesId)
         .eq('status_revisao', 'aprovado')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (obsErr) throw obsErr;
+      if (!obsData || obsData.length === 0) return [];
+
+      const userIds = [...new Set(obsData.map(o => o.usuario_id).filter(Boolean))];
+      if (userIds.length > 0) {
+        const { data: profilesData, error: profErr } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url')
+          .in('id', userIds);
+        
+        if (!profErr && profilesData) {
+          return obsData.map(o => ({
+            ...o,
+            profiles: profilesData.find(p => p.id === o.usuario_id) || null
+          }));
+        }
+      }
+      return obsData;
     } catch (e) {
       console.error('Erro ao buscar observações da espécie:', e.message);
       return [];
@@ -320,16 +340,34 @@ export const dataService = {
   },
 
   getAllObservations: async () => {
-    const { data, error } = await supabase
-      .from('observations')
-      .select('*, species(*), profiles:usuario_id(full_name, avatar_url)')
-      .order('created_at', { ascending: false });
+    try {
+      const { data: obsData, error: obsErr } = await supabase
+        .from('observations')
+        .select('*, species(*)')
+        .order('created_at', { ascending: false });
 
-    if (error) {
+      if (obsErr) throw obsErr;
+      if (!obsData || obsData.length === 0) return [];
+
+      const userIds = [...new Set(obsData.map(o => o.usuario_id).filter(Boolean))];
+      if (userIds.length > 0) {
+        const { data: profilesData, error: profErr } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url')
+          .in('id', userIds);
+        
+        if (!profErr && profilesData) {
+          return obsData.map(o => ({
+            ...o,
+            profiles: profilesData.find(p => p.id === o.usuario_id) || null
+          }));
+        }
+      }
+      return obsData;
+    } catch (error) {
       console.error('Erro ao buscar todas as observações:', error);
       throw error;
     }
-    return data;
   },
 
   // --- COMENTÁRIOS ---

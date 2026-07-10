@@ -27,6 +27,7 @@ import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { dataService } from '../services/dataService';
 import { theme } from '../utils/theme';
 import { useLanguage } from '../utils/i18n';
+import SpeciesDetailsScreen from './SpeciesDetailsScreen';
 
 const sanitizeLevel = (level) => {
   if (!level) return 'Bronze';
@@ -136,6 +137,7 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout, navig
   const [observations, setObservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState('menu'); // 'menu', 'collection', 'changePassword', 'changeEmail', 'addPhoto', 'language'
+  const [selectedSpeciesId, setSelectedSpeciesId] = useState(null);
 
   // States para Alterar Senha
   const [currentPassword, setCurrentPassword] = useState('');
@@ -320,6 +322,10 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout, navig
   // Intercepta botão voltar do Android para retornar ao menu do perfil
   useEffect(() => {
     const backAction = () => {
+      if (selectedSpeciesId) {
+        setSelectedSpeciesId(null);
+        return true;
+      }
       if (currentView !== 'menu') {
         setCurrentView('menu');
         return true;
@@ -333,7 +339,7 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout, navig
     );
 
     return () => backHandler.remove();
-  }, [currentView]);
+  }, [currentView, selectedSpeciesId]);
 
   const loadProfileAndData = async (checkLevelUp = false) => {
     setLoading(true);
@@ -734,6 +740,15 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout, navig
     }
   };
 
+  if (selectedSpeciesId) {
+    return (
+      <SpeciesDetailsScreen
+        speciesId={selectedSpeciesId}
+        onBack={() => setSelectedSpeciesId(null)}
+      />
+    );
+  }
+
   if (isGuest) {
     return (
       <View style={styles.container}>
@@ -790,7 +805,16 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout, navig
             const isCurrentPlaying = playingAudioUrl === item.audio_url;
 
             return (
-              <View style={styles.obsCard}>
+              <TouchableOpacity
+                style={styles.obsCard}
+                onPress={() => {
+                  if (item.especie_id) {
+                    setSelectedSpeciesId(item.especie_id);
+                  }
+                }}
+                disabled={!item.especie_id}
+                activeOpacity={0.8}
+              >
                 <View style={styles.obsHeader}>
                   <Text style={styles.obsPopular}>{popularName}</Text>
                   <View style={[
@@ -834,7 +858,13 @@ export default function LifeListScreen({ isGuest, user, onLogin, onLogout, navig
                     )}
                   </View>
                 )}
-              </View>
+
+                {item.especie_id && (
+                  <Text style={{ alignSelf: 'flex-end', color: theme.colors.accent, fontSize: 12, fontWeight: '600', marginTop: 8 }}>
+                    Ver na Biblioteca ›
+                  </Text>
+                )}
+              </TouchableOpacity>
             );
           }}
         />

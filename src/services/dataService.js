@@ -177,8 +177,6 @@ export const dataService = {
             id,
             nome_popular,
             nome_cientifico,
-            tipo,
-            som_tipo,
             imagem_url
           )
         `)
